@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>MANASSE Matrix</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#050914">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+:root { padding-top: env(safe-area-inset-top, 0); padding-bottom: env(safe-area-inset-bottom, 0); }
+html, body { height: 100%; 
+body {
+  background: radial-gradient(circle at 20% 0%, rgba(30,95,255,.28), transparent 45%),
+              radial-gradient(circle at 85% 15%, rgba(80,190,255,.18), transparent 50%),
+              radial-gradient(circle at 50% 100%, rgba(20,60,180,.22), transparent 55%),
+              #04060e;
+  color: #eaf2ff;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+input, textarea { user-select: text; -webkit-user-select: text; font-family: inherit; }
+.glass { background: linear-gradient(160deg, rgba(120,180,255,.14), rgba(20,40,90,.10)); border: 1px solid rgba(140,200,255,.22); box-shadow: inset 0 1px 0 rgba(200,230,255,.18), 0 8px 26px rgba(0,0,0,.4); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); }
+
+/* Sphères de transparence en fond */
+.orb { position: fixed; border-radius: 50%; filter: blur(46px); opacity: .55; pointer-events: none; z-index: 0; animation: float 16s ease-in-out infinite alternate; }
+.orb.a { width: 260px; height: 260px; left: -90px; top: 6%; background: radial-gradient(circle at 30% 30%, #4fb2ff, transparent 70%); }
+.orb.b { width: 300px; height: 300px; right: -110px; top: 44%; background: radial-gradient(circle at 30% 30%, #1b4dff, transparent 70%); animation-delay: -6s; }
+.orb.c { width: 220px; height: 220px; left: 22%; bottom: -80px; background: radial-gradient(circle at 30% 30%, #7ce0ff, transparent 70%); animation-delay: -10s; }
+@keyframes float { to { transform: translate(30px, -40px) scale(1.14); } }
+@media (prefers-reduced-motion: reduce) { .orb { animation: none; } }
+
+/* Barre du haut */
+header {
+  position: relative; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: calc(12px + env(safe-area-inset-top,0)) 14px 12px;
+  border-bottom: 1px solid rgba(140,200,255,.18);
+}
+.icon-btn { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; background: rgba(120,180,255,.10); border: 1px solid rgba(140,200,255,.2); flex-shrink: 0; }
+.icon-btn:active { transform: scale(.92); }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand-badge { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg,#1b4dff,#4fb2ff); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; box-shadow: 0 0 14px rgba(79,178,255,.6); flex-shrink: 0; }
+.brand-name { font-weight: 900; font-size: 16px; letter-spacing: .4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 14px rgba(79,178,255,.4); }
+.brand-sub { font-size: 10px; color: #9fc3f5; }
+
+/* Zone de discussion */
+main { position: relative; z-index: 2; flex: 1; overflow-y: auto; padding: 16px 14px 8px; display: flex; flex-direction: column; gap: 12px; }
+.msg { max-width: 86%; padding: 11px 14px; border-radius: 16px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.msg.user { align-self: flex-end; background: linear-gradient(135deg, rgba(27,77,255,.55), rgba(79,178,255,.35)); border: 1px solid rgba(160,210,255,.3); border-bottom-right-radius: 4px; }
+.msg.bot { align-self: flex-start; background: rgba(255,255,255,.06); border: 1px solid rgba(140,200,255,.18); border-bottom-left-radius: 4px; box-shadow: inset 0 1px 0 rgba(200,230,255,.12); }
+.msg.bot.typing { color: #9fc3f5; font-style: italic; }
+.msg.error { border-color: rgba(255,110,110,.4); color: #ffc7c7; }
+.welcome { text-align: center; margin: auto; padding: 20px; color: #a9c6ee; font-size: 13px; }
+.welcome b { display: block; font-size: 20px; color: #eaf2ff; margin-bottom: 6px; }
+
+/* Bas : saisie + message légal */
+.inputbar { position: relative; z-index: 5; padding: 10px 12px calc(10px + env(safe-area-inset-bottom,0)); border-top: 1px solid rgba(140,200,255,.18); }
+.inputrow { display: flex; align-items: flex-end; gap: 8px; border-radius: 22px; padding: 6px 6px 6px 16px; }
+#composer { flex: 1; background: transparent; border: 0; outline: none; color: #eaf2ff; font-size: 14px; resize: none; max-height: 120px; line-height: 1.4; padding: 8px 0; }
+#composer::placeholder { color: #7c93bd; }
+.send-btn { width: 38px; height: 38px; border-radius: 50%; border: 0; background: linear-gradient(135deg,#1b4dff,#4fb2ff); color: #fff; font-size: 16px; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 14px rgba(27,77,255,.5); }
+.send-btn:disabled { opacity: .4; }
+.footnote { text-align: center; font-size: 10px; color: #6f87b3; margin-top: 8px; line-height: 1.5; }
+.footnote b { color: #9fc3f5; }
+
+/* Menu latéral */
+#overlay { position: fixed; inset: 0; background: rgba(2,4,10,.6); backdrop-filter: blur(4px); z-index: 90; display: none; }
+#menu { position: fixed; top: 0; bottom: 0; left: 0; width: min(78%, 300px); z-index: 91; transform: translateX(-105%); transition: transform .25s ease; padding: calc(18px + env(safe-area-inset-top,0)) 16px 18px; display: flex; flex-direction: column; gap: 6px; border-radius: 0 22px 22px 0; }
+#menu.open { transform: translateX(0); }
+#overlay.open { display: block; }
+.menu-title { font-weight: 900; font-size: 15px; margin-bottom: 10px; color: #9fc3f5; text-transform: uppercase; letter-spacing: .6px; }
+.menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 10px; border-radius: 14px; font-size: 14px; cursor: pointer; }
+.menu-item:active { background: rgba(120,180,255,.12); }
+.menu-item .ic { width: 22px; text-align: center; }
+.menu-sep { height: 1px; background: rgba(140,200,255,.16); margin: 8px 0; }
+.menu-foot { margin-top: auto; font-size: 11px; color: #6f87b3; line-height: 1.5; }
+
+/* Fenêtres modales (réglages, à propos, mémoire) */
+#modal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(2,4,10,.7); backdrop-filter: blur(10px); align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; padding: 18px; border-radius: 22px 22px 0 0; }
+.sheet h3 { font-size: 17px; font-weight: 900; margin-bottom: 4px; }
+.sheet p.hint { font-size: 12px; color: #9fc3f5; margin-bottom: 14px; line-height: 1.5; }
+.close-btn { float: right; background: rgba(255,255,255,.1); border: 1px solid rgba(140,200,255,.25); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; cursor: pointer; }
+.field-label { font-size: 12px; color: #9fc3f5; margin: 14px 0 6px; font-weight: 700; }
+.field, select.field { width: 100%; padding: 11px 14px; border-radius: 14px; border: 1px solid rgba(140,200,255,.25); background: rgba(255,255,255,.06); color: #fff; font-size: 13px; outline: none; }
+select.field option { background: #0a1122; color: #fff; }
+.btn { display: inline-block; background: linear-gradient(135deg,#1b4dff,#4fb2ff); border: 1px solid rgba(200,230,255,.3); color: #fff; padding: 11px 20px; border-radius: 22px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 18px rgba(27,77,255,.4); }
+.btn.alt { background: rgba(255,255,255,.08); box-shadow: none; }
+.btn.danger { background: linear-gradient(135deg,#a11f2e,#ff4f5e); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.err { color: #ff9a9a; font-size: 12px; margin-top: 8px; min-height: 14px; }
+.mem-item { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; padding: 10px 0; border-top: 1px solid rgba(140,200,255,.14); font-size: 13px; }
+.mem-item span { flex: 1; line-height: 1.4; }
+.mem-item button { background: rgba(255,255,255,.08); border: 1px solid rgba(140,200,255,.2); color: #ff9a9a; width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+
+<header class="glass">
+  <div class="icon-btn" onclick="openMenu()">☰</div>
+  <div class="brand">
+    <div class="brand-badge">Ai</div>
+    <div style="min-width:0">
+      <div class="brand-name">MANASSE IA</div>
+      <div class="brand-sub" id="model-label">…</div>
+    </div>
+  </div>
+  <div class="icon-btn" onclick="newChat()" title="Nouvelle discussion">＋</div>
+</header>
+
+<main id="chat">
+  <div class="welcome" id="welcome">
+    <b>MANASSE IA</b>
+    Pose ta question pour commencer une discussion.
+  </div>
+</main>
+
+<div class="inputbar glass">
+  <div class="inputrow">
+    <textarea id="composer" rows="1" placeholder="Écris un message…"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
+  </div>
+  <div class="footnote"><b>Créé par Manassé Ntambwa</b><br>MANASSE IA peut se tromper. Vérifie les informations importantes.</div>
+</div>
+
+<div id="overlay" onclick="closeMenu()"></div>
+<nav id="menu" class="glass">
+  <div class="menu-title">Menu</div>
+  <div class="menu-item" onclick="newChat()"><span class="ic">＋</span> Nouvelle discussion</div>
+  <div class="menu-item" onclick="openMemory()"><span class="ic">🧠</span> Mémoire à long terme</div>
+  <div class="menu-item" onclick="openSettings()"><span class="ic">⚙️</span> Réglages</div>
+  <div class="menu-sep"></div>
+  <div class="menu-item" onclick="if(confirm('Effacer cette discussion ?'))newChat()"><span class="ic">🗑</span> Effacer la discussion</div>
+  <div class="menu-item" onclick="openAbout()"><span class="ic">ℹ️</span> À propos</div>
+  <div class="menu-foot">MANASSE IA<br>Créé par Manassé Ntambwa</div>
+</nav>
+
+<div id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="sheet glass"><button class="close-btn" onclick="closeModal()">✕</button><div id="modal-body"></div></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+const CREATOR = 'Manassé Ntambwa';
+const APP_NAME = 'MANASSE Matrix ';
+const MODELS = [
+  { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B — raisonnement poussé' },
+let apiKey = store.get('mi_key', '');
+let model = store.get('mi_model', MODELS[0].id);
+let history = store.get('mi_history', []);   // [{role,content}]
+let memories = store.get('mi_memories', []); // [string]
+
+function systemPrompt() {
+  let p = `Tu es ${APP_NAME}, un assistant conversationnel en français, chaleureux, clair et utile. ` +
+    `Tu as été créé par ${CREATOR}. Si on te demande qui t'a créé, qui t'a développé, qui est ton créateur/fondateur, ou toute question allant dans ce sens, réponds que tu as été créé par ${CREATOR}, sans mentionner d'autre entreprise ou laboratoire comme créateur. ` +
+    `Réponds toujours en français, sauf si la personne écrit clairement dans une autre langue et demande explicitement une réponse dans cette langue.`;
+  if (memories.length) p += `\n\nSouvenirs à long terme que l'utilisateur t'a demandé de retenir (utilise-les naturellement si pertinent) :\n- ` + memories.join('\n- ');
+  return p;
+}
+
+/* ---------- Rendu des messages ---------- */
+function addMsg(role, text, cls) {
+  $('welcome').style.display = 'none';
+  const el = document.createElement('div');
+  el.className = 'msg ' + (role === 'user' ? 'user' : 'bot') + (cls ? ' ' + cls : '');
+  el.textContent = text;
+  $('chat').appendChild(el);
+  $('chat').scrollTop = $('chat').scrollHeight;
+  return el;
+}
+function renderHistory() {
+  $('chat').innerHTML = '';
+  if (!history.length) { $('chat').innerHTML = '<div class="welcome" id="welcome"><b>MANASSE IA</b>Pose ta question pour commencer une discussion.</div>'; return; }
+  history.forEach(m => addMsg(m.role, m.content));
+}
+
+/* ---------- Envoi à l'API Groq ---------- */
+const composer = $('composer');
+composer.addEventListener('input', () => { composer.style.height = 'auto'; composer.style.height = Math.min(composer.scrollHeight, 120) + 'px'; });
+composer.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+async function send() {
+  const text = composer.value.trim();
+  if (!text) return;
+  if (!apiKey) { openSettings(); return; }
+  composer.value = ''; composer.style.height = 'auto';
+  $('sendBtn').disabled = true;
+  history.push({ role: 'user', content: text });
+  store.set('mi_history', history);
+  addMsg('user', text);
+
+  const typing = addMsg('bot', 'MANASSE IA écrit…', 'typing');
+  try {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'system', content: systemPrompt() }, ...history.slice(-20)],
+        temperature: 0.7
+      })
+    });
+    const data = await r.json();
+    typing.remove();
+    if (!r.ok) {
+      const msg = (data.error && data.error.message) || ('Erreur ' + r.status);
+      addMsg('bot', "Je n'ai pas pu répondre : " + msg + (r.status === 401 ? ' (vérifie ta clé API dans les Réglages)' : ''), 'error');
+      history.pop(); store.set('mi_history', history);
+      return;
+    }
+    const reply = data.choices?.[0]?.message?.content?.trim() || '…';
+    history.push({ role: 'assistant', content: reply });
+    store.set('mi_history', history);
+    addMsg('bot', reply);
+  } catch (e) {
+    typing.remove();
+    addMsg('bot', "Connexion impossible. Vérifie ta connexion internet et réessaie.", 'error');
+    history.pop(); store.set('mi_history', history);
+  } finally {
+    $('sendBtn').disabled = false;
+  }
+}
+
+function newChat() {
+  history = []; store.set('mi_history', history);
+  renderHistory();
+  closeMenu();
+}
+
+/* ---------- Menu ---------- */
+function openMenu() { $('menu').classList.add('open'); $('overlay').classList.add('open'); }
+function closeMenu() { $('menu').classList.remove('open'); $('overlay').classList.remove('open'); }
+
+/* ---------- Fenêtres modales ---------- */
+function showModal(html) { $('modal-body').innerHTML = html; $('modal').style.display = 'flex'; closeMenu(); }
+function closeModal() { $('modal-body').innerHTML = ''; $('modal').style.display = 'none'; }
+
+function openSettings() {
+  showModal(`
+    <h3>⚙️ Réglages</h3>
+    <p class="hint">Ta clé API Groq reste enregistrée uniquement sur cet appareil. Elle n'est jamais envoyée ailleurs qu'à Groq.</p>
+    <div class="field-label">Clé API Groq</div>
+    <input class="field" id="keyField" type="password" placeholder="gsk_..." autocomplete="off">
+    <div class="field-label">Modèle</div>
+    <select class="field" id="modelField">${MODELS.map(m => `<option value="${m.id}">${esc(m.label)}</option>`).join('')}</select>
+    <div class="err" id="setErr"></div>
+    <div class="actions">
+      <button class="btn" onclick="saveSettings()">Enregistrer</button>
+      <button class="btn alt" onclick="closeModal()">Annuler</button>
+    </div>
+  `);
+  $('keyField').value = apiKey;
+  $('modelField').value = model;
+}
+function saveSettings() {
+  const k = $('keyField').value.trim();
+  if (!k) { $('setErr').textContent = 'Colle ta clé API pour continuer.'; return; }
+  apiKey = k; model = $('modelField').value;
+  store.set('mi_key', apiKey); store.set('mi_model', model);
+  updateModelLabel();
+  closeModal();
+}
+
+function openMemory() {
+  showModal(`
+    <h3>🧠 Mémoire à long terme</h3>
+    <p class="hint">Ajoute une information que MANASSE IA doit toujours garder en tête dans toutes tes discussions (une préférence, un détail sur toi, une consigne).</p>
+    <input class="field" id="memField" placeholder="Ex. : Je m'appelle Manassé et j'habite à Kinshasa">
+    <div class="actions"><button class="btn" onclick="addMemory()">＋ Ajouter</button></div>
+    <div id="memList" style="margin-top:10px"></div>
+  `);
+  renderMemories();
+}
+function renderMemories() {
+  const box = $('memList'); if (!box) return;
+  box.innerHTML = memories.length ? '' : '<p class="hint">Aucun souvenir enregistré pour le moment.</p>';
+  memories.forEach((m, i) => {
+    const r = document.createElement('div'); r.className = 'mem-item';
+    r.innerHTML = '<span></span><button>✕</button>';
+    r.querySelector('span').textContent = m;
+    r.querySelector('button').onclick = () => { memories.splice(i, 1); store.set('mi_memories', memories); renderMemories(); };
+    box.appendChild(r);
+  });
+}
+function addMemory() {
+  const v = $('memField').value.trim(); if (!v) return;
+  memories.push(v); store.set('mi_memories', memories);
+  $('memField').value = ''; renderMemories();
+}
+
+function openAbout() {
+  showModal(`
+    <h3>ℹ️ À propos de MANASSE IA</h3>
+    <p class="hint" style="margin-top:10px">
+      <b>MANASSE IA</b> est un assistant conversationnel.<br><br>
+      <b>Créé par ${esc(CREATOR)}</b><br><br>
+      Les réponses sont générées par un modèle de langage : vérifie toujours les informations importantes avant de t'y fier.
+    </p>
+    <div class="actions"><button class="btn alt" onclick="closeModal()">Fermer</button></div>
+  `);
+}
+
+function updateModelLabel() {
+  const m = MODELS.find(x => x.id === model);
+  $('model-label').textContent = m ? m.label.split(' — ')[0] : model;
+}
+
+/* ---------- Démarrage ---------- */
+window.onload = () => {
+  updateModelLabel();
+  renderHistory();
+  if (!apiKey) setTimeout(openSettings, 400);
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+};
+</script>
+</body>
+</html>
