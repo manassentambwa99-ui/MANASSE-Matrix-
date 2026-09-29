@@ -157,7 +157,12 @@ const defaultKey = kPart1 + kPart2;
 const CREATOR = 'Manassé Ntambwa';
 const APP_NAME = 'MANASSE IA';
 const MODELS = [
+  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — équilibré (par défaut)' },
+  { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B — très rapide' },
   { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B — raisonnement poussé' },
+  { id: 'qwen/qwen3-32b', label: 'Qwen3 32B' }
+];
+
 let apiKey = store.get('mi_key', defaultKey);
 let model = store.get('mi_model', MODELS[0].id);
 let history = store.get('mi_history', []);   // [{role,content}]
@@ -250,17 +255,7 @@ function closeModal() { $('modal-body').innerHTML = '';$('modal').style.display 
 
 function openSettings() {
   showModal(`
-    <h3>⚙️ Réglages</h3>
-    <p class="hint">Ta clé API Groq reste enregistrée uniquement sur cet appareil. Elle n'est jamais envoyée ailleurs qu'à Groq.</p>
-    <div class="field-label">Clé API Groq</div>
-    <input class="field" id="keyField" type="password" placeholder="gsk_..." autocomplete="off">
-    <div class="field-label">Modèle</div>
-    <select class="field" id="modelField">${MODELS.map(m => `<option value="${m.id}">${esc(m.label)}</option>`).join('')}</select>
-    <div class="err" id="setErr"></div>
-    <div class="actions">
-      <button class="btn" onclick="saveSettings()">Enregistrer</button>
-      <button class="btn alt" onclick="closeModal()">Annuler</button>
-    </div>
+    
   `);
   $('keyField').value = apiKey;
   $('modelField').value = model;
