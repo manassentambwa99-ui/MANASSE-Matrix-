@@ -1,577 +1,166 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>MANASSE IA — L'Intelligence Ultime</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<meta name="theme-color" content="#050914">
-
-<!-- Highlight.js pour la coloration du code -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<!-- Marked.js pour le rendu Markdown -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-:root {
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --primary: #1b4dff;
-  --primary-glow: #4fb2ff;
-  --bg-dark: #04060e;
-}
-
-html, body {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  background-color: var(--bg-dark);
-}
-
-body {
-  background: radial-gradient(circle at 20% 0%, rgba(30,95,255,.28), transparent 45%),
-              radial-gradient(circle at 85% 15%, rgba(80,190,255,.18), transparent 50%),
-              radial-gradient(circle at 50% 100%, rgba(20,60,180,.22), transparent 55%),
-              var(--bg-dark);
-  color: #eaf2ff;
-  display: flex;
-  flex-direction: column;
-  -webkit-tap-highlight-color: transparent;
-}
-
-input, textarea { user-select: text; -webkit-user-select: text; font-family: inherit; }
-
-.glass {
-  background: linear-gradient(160deg, rgba(120,180,255,.12), rgba(20,40,90,.10));
-  border: 1px solid rgba(140,200,255,.22);
-  box-shadow: inset 0 1px 0 rgba(200,230,255,.18), 0 8px 26px rgba(0,0,0,.4);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-}
-
-/* Sphères d'ambiance */
-.orb { position: fixed; border-radius: 50%; filter: blur(50px); opacity: .55; pointer-events: none; z-index: 0; animation: float 16s ease-in-out infinite alternate; }
-.orb.a { width: 260px; height: 260px; left: -90px; top: 6%; background: radial-gradient(circle at 30% 30%, #4fb2ff, transparent 70%); }
-.orb.b { width: 300px; height: 300px; right: -110px; top: 44%; background: radial-gradient(circle at 30% 30%, #1b4dff, transparent 70%); animation-delay: -6s; }
-.orb.c { width: 220px; height: 220px; left: 22%; bottom: -80px; background: radial-gradient(circle at 30% 30%, #7ce0ff, transparent 70%); animation-delay: -10s; }
-@keyframes float { to { transform: translate(30px, -40px) scale(1.14); } }
-
-/* Barre de navigation haute */
-header {
-  position: relative; z-index: 10;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: calc(12px + var(--safe-top)) 14px 12px;
-  border-bottom: 1px solid rgba(140,200,255,.18);
-  flex-shrink: 0;
-}
-.icon-btn { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; background: rgba(120,180,255,.10); border: 1px solid rgba(140,200,255,.2); flex-shrink: 0; transition: transform .15s; }
-.icon-btn:active { transform: scale(.92); }
-.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.brand-badge { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-glow)); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; box-shadow: 0 0 14px rgba(79,178,255,.6); flex-shrink: 0; }
-.brand-name { font-weight: 900; font-size: 16px; letter-spacing: .4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 14px rgba(79,178,255,.4); }
-
-/* Zone Principale de Chat Fixée pour Défilement Correct */
-main#chat {
-  position: relative; z-index: 2;
-  flex: 1 1 auto;
-  min-height: 0; /* Évite les débordements Flexbox */
-  overflow-y: auto;
-  padding: 16px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  scroll-behavior: smooth;
-}
-
-/* Bulles de message */
-.msg-wrapper { display: flex; flex-direction: column; gap: 4px; max-width: 88%; }
-.msg-wrapper.user { align-self: flex-end; }
-.msg-wrapper.bot { align-self: flex-start; }
-
-.msg {
-  padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 14.5px;
-  line-height: 1.6;
-  word-break: break-word;
-}
-.msg.user {
-  background: linear-gradient(135deg, rgba(27,77,255,.65), rgba(79,178,255,.45));
-  border: 1px solid rgba(160,210,255,.35);
-  border-bottom-right-radius: 4px;
-  color: #fff;
-}
-.msg.bot {
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(140,200,255,.18);
-  border-bottom-left-radius: 4px;
-  box-shadow: inset 0 1px 0 rgba(200,230,255,.12);
-  color: #eaf2ff;
-}
-.msg.bot.typing { color: #9fc3f5; font-style: italic; display: flex; align-items: center; gap: 8px; }
-.msg.error { border-color: rgba(255,110,110,.4); color: #ffc7c7; background: rgba(255,0,0,.1); }
-
-/* Rendu du Code & Markdown */
-.msg p { margin-bottom: 8px; }
-.msg p:last-child { margin-bottom: 0; }
-.msg pre { margin: 10px 0; border-radius: 10px; overflow: hidden; background: #090e1a !important; border: 1px solid rgba(140,200,255,.2); }
-.msg code { font-family: 'Fira Code', Consolas, Monaco, monospace; font-size: 13px; }
-.code-header { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,.05); padding: 6px 12px; font-size: 11px; color: #8ab4f8; border-bottom: 1px solid rgba(255,255,255,.1); }
-.copy-code-btn { background: transparent; border: none; color: #8ab4f8; cursor: pointer; font-size: 11px; }
-
-/* Actions sous le message IA */
-.msg-actions { display: flex; gap: 8px; margin-top: 4px; padding: 0 4px; }
-.action-btn { background: transparent; border: none; color: #7c93bd; font-size: 13px; cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: all .2s; }
-.action-btn:hover { color: #eaf2ff; background: rgba(255,255,255,.1); }
-
-.welcome { text-align: center; margin: auto; padding: 20px; color: #a9c6ee; font-size: 14px; max-width: 480px; }
-.welcome b { display: block; font-size: 22px; color: #eaf2ff; margin-bottom: 8px; background: linear-gradient(135deg, #fff, #7ce0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-/* Suggestions rapides (Façon ChatGPT / Perplexity) */
-.suggestions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
-.sug-card { background: rgba(255,255,255,.04); border: 1px solid rgba(140,200,255,.15); padding: 10px; border-radius: 12px; font-size: 12px; text-align: left; cursor: pointer; transition: all .2s; }
-.sug-card:hover { background: rgba(120,180,255,.12); border-color: rgba(140,200,255,.3); }
-
-/* Barre de saisie */
-.inputbar { position: relative; z-index: 10; padding: 10px 12px calc(10px + var(--safe-bottom)); border-top: 1px solid rgba(140,200,255,.18); flex-shrink: 0; }
-.inputrow { display: flex; align-items: flex-end; gap: 8px; border-radius: 22px; padding: 6px 6px 6px 14px; background: rgba(10,18,35,.6); border: 1px solid rgba(140,200,255,.2); }
-#composer { flex: 1; background: transparent; border: 0; outline: none; color: #eaf2ff; font-size: 14.5px; resize: none; max-height: 120px; line-height: 1.4; padding: 8px 0; }
-#composer::placeholder { color: #6f87b3; }
-.icon-action { background: transparent; border: 0; color: #8ab4f8; font-size: 18px; cursor: pointer; padding: 8px; border-radius: 50%; }
-.icon-action:hover { background: rgba(255,255,255,.1); }
-.send-btn { width: 38px; height: 38px; border-radius: 50%; border: 0; background: linear-gradient(135deg, var(--primary), var(--primary-glow)); color: #fff; font-size: 15px; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 14px rgba(27,77,255,.5); transition: transform .15s; }
-.send-btn:disabled { opacity: .4; cursor: not-allowed; }
-.send-btn:active { transform: scale(.92); }
-.footnote { text-align: center; font-size: 10.5px; color: #6f87b3; margin-top: 8px; }
-.footnote b { color: #9fc3f5; }
-
-/* Menu Latéral */
-#overlay { position: fixed; inset: 0; background: rgba(2,4,10,.7); backdrop-filter: blur(6px); z-index: 90; display: none; }
-#menu { position: fixed; top: 0; bottom: 0; left: 0; width: min(80%, 320px); z-index: 91; transform: translateX(-105%); transition: transform .25s ease; padding: calc(18px + var(--safe-top)) 16px 18px; display: flex; flex-direction: column; gap: 6px; border-radius: 0 22px 22px 0; }
-#menu.open { transform: translateX(0); }
-#overlay.open { display: block; }
-.menu-title { font-weight: 900; font-size: 15px; margin-bottom: 12px; color: #9fc3f5; text-transform: uppercase; letter-spacing: .6px; }
-.menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 12px; border-radius: 14px; font-size: 14px; cursor: pointer; transition: background .2s; }
-.menu-item:hover, .menu-item:active { background: rgba(120,180,255,.15); }
-.menu-item .ic { width: 22px; text-align: center; font-size: 16px; }
-.menu-sep { height: 1px; background: rgba(140,200,255,.16); margin: 8px 0; }
-.menu-foot { margin-top: auto; font-size: 11px; color: #6f87b3; line-height: 1.5; text-align: center; }
-
-/* Modales */
-#modal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(2,4,10,.75); backdrop-filter: blur(10px); align-items: flex-end; justify-content: center; }
-.sheet { width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; padding: 20px; border-radius: 22px 22px 0 0; }
-.sheet h3 { font-size: 18px; font-weight: 900; margin-bottom: 6px; color: #fff; }
-.sheet p.hint { font-size: 12.5px; color: #9fc3f5; margin-bottom: 14px; line-height: 1.5; }
-.close-btn { float: right; background: rgba(255,255,255,.1); border: 1px solid rgba(140,200,255,.25); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; cursor: pointer; }
-.field-label { font-size: 12px; color: #9fc3f5; margin: 14px 0 6px; font-weight: 700; }
-.field, select.field { width: 100%; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(140,200,255,.25); background: rgba(255,255,255,.06); color: #fff; font-size: 13.5px; outline: none; }
-select.field option { background: #0a1122; color: #fff; }
-.btn { display: inline-block; background: linear-gradient(135deg, var(--primary), var(--primary-glow)); border: 1px solid rgba(200,230,255,.3); color: #fff; padding: 12px 22px; border-radius: 22px; font-size: 13.5px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 18px rgba(27,77,255,.4); }
-.btn.alt { background: rgba(255,255,255,.08); box-shadow: none; }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
-.mem-item { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 10px; background: rgba(255,255,255,.04); border-radius: 10px; margin-bottom: 8px; font-size: 13px; }
-.mem-item button { background: rgba(255,80,80,.2); border: none; color: #ff9a9a; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="CircuitPlay, laboratoire interactif de logique numérique pour les élèves.">
+  <title>CircuitPlay | Laboratoire logique</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
 <body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="CircuitPlay, accueil">
+      <span class="brand-icon">ϟ</span>
+      <span>Circuit<span class="brand-accent">Play</span></span>
+    </a>
+    <span class="status"><span class="status-dot"></span> LABORATOIRE ACTIF</span>
+  </header>
 
-<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+  <main class="container">
+    <section class="hero">
+      <span class="eyebrow">LABORATOIRE DE LOGIQUE NUMÉRIQUE</span>
+      <h1>Comprendre les circuits.<br><span>Penser comme un ordinateur.</span></h1>
+      <p>Modifie les entrées, choisis une porte logique et observe comment le signal se transforme.</p>
+    </section>
 
-<header class="glass">
-  <div class="icon-btn" onclick="openMenu()">☰</div>
-  <div class="brand">
-    <div class="brand-badge">M</div>
-    <div style="min-width:0">
-      <div class="brand-name">MANASSE IA</div>
-    </div>
-  </div>
-  <div class="icon-btn" onclick="newChat()" title="Nouvelle discussion">＋</div>
-</header>
-
-<main id="chat">
-  <div class="welcome" id="welcome">
-    <b>MANASSE IA</b>
-    L'intelligence artificielle de nouvelle génération, conçue pour vous accompagner sans limites.
-    
-    <div class="suggestions">
-      <div class="sug-card" onclick="quickSend('Explique-moi la théorie de la relativité simplement.')">💡 Explique la relativité simplement</div>
-      <div class="sug-card" onclick="quickSend('Écris un script Python pour analyser des données CSV.')">💻 Script Python d'analyse CSV</div>
-      <div class="sug-card" onclick="quickSend('Donne-moi 5 idées créatives pour un projet Web.')">🚀 5 Idées de projets Web</div>
-      <div class="sug-card" onclick="quickSend('Rédige une lettre de motivation percutante.')">📝 Lettre de motivation</div>
-    </div>
-  </div>
-</main>
-
-<div class="inputbar glass">
-  <div class="inputrow">
-    <button class="icon-action" id="micBtn" onclick="toggleVoiceInput()" title="Saisie vocale">🎙️</button>
-    <textarea id="composer" rows="1" placeholder="Posez votre question à MANASSE IA…"></textarea>
-    <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
-  </div>
-  <div class="footnote"><b>Créé par Manassé Ntambwa</b> • MANASSE IA peut produire des informations à vérifier.</div>
-</div>
-
-<div id="overlay" onclick="closeMenu()"></div>
-<nav id="menu" class="glass">
-  <div class="menu-title">MANASSE IA</div>
-  <div class="menu-item" onclick="newChat()"><span class="ic">＋</span> Nouvelle discussion</div>
-  <div class="menu-item" onclick="openMemory()"><span class="ic">🧠</span> Mémoire à long terme</div>
-  <div class="menu-item" onclick="openSettings()"><span class="ic">⚙️</span> Réglages</div>
-  <div class="menu-sep"></div>
-  <div class="menu-item" onclick="if(confirm('Effacer cette discussion ?'))newChat()"><span class="ic">🗑</span> Effacer la discussion</div>
-  <div class="menu-item" onclick="openAbout()"><span class="ic">ℹ️</span> À propos</div>
-  <div class="menu-foot">MANASSE IA v2.0<br>Créé par <b>Manassé Ntambwa</b></div>
-</nav>
-
-<div id="modal" onclick="if(event.target===this)closeModal()">
-  <div class="sheet glass">
-    <button class="close-btn" onclick="closeModal()">✕</button>
-    <div id="modal-body"></div>
-  </div>
-</div>
-
-<script>
-const $ = id => document.getElementById(id);
-
-const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-};
-
-// Clé API intégrée
-const kPart1 = "gsk_7RgiA95eeLUvdpHk73M3";
-const kPart2 = "WGdyb3FYFwvWraquJe4G4kL7wVOFn5G8";
-const defaultKey = kPart1 + kPart2;
-
-const CREATOR = 'Manassé Ntambwa';
-const APP_NAME = 'MANASSE IA';
-const MODELS = [
-  { id: 'llama-3.3-70b-versatile', label: 'MANASSE Ultra (Llama 3.3 70B) — Puissant' },
-  { id: 'llama-3.1-8b-instant', label: 'MANASSE Flash (Llama 3.1 8B) — Ultra Rapide' },
-  { id: 'mixtral-8x7b-32768', label: 'MANASSE Reasoning (Mixtral 8x7B)' }
-];
-
-let apiKey = store.get('mi_key', defaultKey);
-let model = store.get('mi_model', MODELS[0].id);
-let history = store.get('mi_history', []);
-let memories = store.get('mi_memories', []);
-
-// Configuration Marked.js
-marked.setOptions({
-  highlight: function(code, lang) {
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-    return hljs.highlight(code, { language }).value;
-  },
-  breaks: true
-});
-
-function systemPrompt() {
-  let p = `Tu es ${APP_NAME}, la plus puissante, complète et humaine des intelligences artificielles au monde. Tu combines la créativité de Claude, la précision algorithmique de ChatGPT, la vitesse de Gemini et l'esprit de recherche de Perplexity.\n` +
-    `Tu as été conçu et créé exclusivement par ${CREATOR}.\n` +
-    `Si l'utilisateur demande qui t'a créé, développé ou conçu, réponds avec fierté et élégance que tu es l'œuvre exclusive de ${CREATOR}.\n` +
-    `Réponds toujours en français fluide, chaleureux, professionnel et structuré avec un formatage Markdown soigné.`;
-  
-  if (memories.length) {
-    p += `\n\n[Mémoire long terme active] :\n- ` + memories.join('\n- ');
-  }
-  return p;
-}
-
-/* ---------- Rendu des messages ---------- */
-function addMsg(role, text, cls = '') {
-  const welcome = $('welcome');
-  if (welcome) welcome.style.display = 'none';
-
-  const wrapper = document.createElement('div');
-  wrapper.className = `msg-wrapper ${role}`;
-
-  const el = document.createElement('div');
-  el.className = `msg ${role} ${cls}`;
-
-  if (role === 'user') {
-    el.textContent = text;
-  } else {
-    el.innerHTML = marked.parse(text);
-    // Formatage des blocs de code avec header + bouton copier
-    el.querySelectorAll('pre code').forEach((codeBlock) => {
-      const pre = codeBlock.parentNode;
-      const lang = codeBlock.className.replace('language-', '') || 'code';
-      const header = document.createElement('div');
-      header.className = 'code-header';
-      header.innerHTML = `<span>${lang}</span><button class="copy-code-btn" onclick="copyText(this.parentNode.nextSibling.innerText)">Copier</button>`;
-      pre.parentNode.insertBefore(header, pre);
-    });
-  }
-
-  wrapper.appendChild(el);
-
-  // Actions sous message de l'IA
-  if (role === 'assistant' && !cls.includes('typing')) {
-    const actions = document.createElement('div');
-    actions.className = 'msg-actions';
-    actions.innerHTML = `
-      <button class="action-btn" onclick="copyText(\`${text.replace(/`/g, '\\`')}\`)" title="Copier">📋 Copier</button>
-      <button class="action-btn" onclick="speakText(this, \`${text.replace(/`/g, '\\`')}\`)" title="Écouter">🔊 Écouter</button>
-      <button class="action-btn" onclick="regenerateLast()" title="Régénérer">🔄 Régénérer</button>
-    `;
-    wrapper.appendChild(actions);
-  }
-
-  $('chat').appendChild(wrapper);
-  scrollToBottom();
-  return wrapper;
-}
-
-function scrollToBottom() {
-  const chat = $('chat');
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function renderHistory() {
-  $('chat').innerHTML = '';
-  if (!history.length) {
-    $('chat').innerHTML = `
-      <div class="welcome" id="welcome">
-        <b>MANASSE IA</b>
-        L'intelligence artificielle de nouvelle génération, conçue pour vous accompagner sans limites.
-        <div class="suggestions">
-          <div class="sug-card" onclick="quickSend('Explique-moi la théorie de la relativité simplement.')">💡 Explique la relativité simplement</div>
-          <div class="sug-card" onclick="quickSend('Écris un script Python pour analyser des données CSV.')">💻 Script Python d'analyse CSV</div>
-          <div class="sug-card" onclick="quickSend('Donne-moi 5 idées créatives pour un projet Web.')">🚀 5 Idées de projets Web</div>
-          <div class="sug-card" onclick="quickSend('Rédige une lettre de motivation percutante.')">📝 Lettre de motivation</div>
+    <section class="panel" aria-labelledby="sim-title">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">01 / SIMULATION</span>
+          <h2 id="sim-title">Construis ton circuit</h2>
         </div>
-      </div>`;
-    return;
-  }
-  history.forEach(m => addMsg(m.role === 'assistant' ? 'assistant' : 'user', m.content));
-}
+        <button id="resetBtn" class="button button-secondary" type="button">
+          ↺ Réinitialiser
+        </button>
+      </div>
 
-/* ---------- Gestion de l'API ---------- */
-const composer = $('composer');
-composer.addEventListener('input', () => {
-  composer.style.height = 'auto';
-  composer.style.height = Math.min(composer.scrollHeight, 120) + 'px';
-});
-composer.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    send();
-  }
-});
+      <label class="field-label" for="gateSelect">Porte logique</label>
+      <select id="gateSelect">
+        <option value="AND">ET (AND)</option>
+        <option value="OR">OU (OR)</option>
+        <option value="NOT">NON (NOT)</option>
+      </select>
 
-function quickSend(txt) {
-  composer.value = txt;
-  send();
-}
+      <p id="gateDescription" class="description" aria-live="polite">
+        La sortie vaut 1 seulement si A et B valent 1.
+      </p>
 
-async function send() {
-  const text = composer.value.trim();
-  if (!text) return;
-  if (!apiKey) apiKey = defaultKey;
+      <div class="circuit">
+        <div class="input-column">
+          <span class="mini-label">ENTRÉES</span>
 
-  composer.value = '';
-  composer.style.height = 'auto';
-  $('sendBtn').disabled = true;
+          <div class="input-card">
+            <span class="signal-name">A</span>
+            <button id="inputA" class="toggle" type="button"
+              role="switch" aria-checked="false" aria-label="Entrée A">
+              <span class="toggle-knob"></span>
+            </button>
+            <span id="valueA" class="bit">0</span>
+          </div>
 
-  history.push({ role: 'user', content: text });
-  store.set('mi_history', history);
-  addMsg('user', text);
+          <div class="input-card" id="inputBCard">
+            <span class="signal-name">B</span>
+            <button id="inputB" class="toggle" type="button"
+              role="switch" aria-checked="false" aria-label="Entrée B">
+              <span class="toggle-knob"></span>
+            </button>
+            <span id="valueB" class="bit">0</span>
+          </div>
+        </div>
 
-  const startTime = Date.now();
-  const typingWrapper = addMsg('assistant', 'MANASSE IA réfléchi…', 'typing');
+        <div class="gate-column">
+          <span class="mini-label">PORTE</span>
+          <div id="gateVisual" class="gate-visual">
+            <svg viewBox="0 0 120 90" role="img" aria-label="Symbole de la porte logique">
+              <path id="gateShape" d="M25 12 H50 A33 33 0 0 1 50 78 H25 Z"
+                fill="#1d3555" stroke="#60a5fa" stroke-width="3"/>
+              <text id="gateSymbol" x="48" y="52" text-anchor="middle"
+                fill="#ffffff" font-size="16" font-weight="bold">ET</text>
+            </svg>
+          </div>
+          <span id="gateName" class="gate-name">AND</span>
+        </div>
 
-  try {
-    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [{ role: 'system', content: systemPrompt() }, ...history.slice(-20)],
-        temperature: 0.7
-      })
-    });
+        <div class="output-column">
+          <span class="mini-label">SORTIE</span>
+          <div id="outputLamp" class="lamp" role="img" aria-label="Sortie éteinte">
+            <span></span>
+          </div>
+          <span id="outputValue" class="output-value">0 · FAUX</span>
+        </div>
+      </div>
 
-    const data = await r.json();
-    typingWrapper.remove();
+      <div class="result-box" aria-live="polite">
+        <span class="result-icon" id="resultIcon">○</span>
+        <div>
+          <strong id="resultTitle">Sortie désactivée</strong>
+          <p id="resultExplanation">La sortie vaut 0.</p>
+        </div>
+      </div>
 
-    if (!r.ok) {
-      const msg = (data.error && data.error.message) || ('Erreur ' + r.status);
-      addMsg('assistant', "⚠️ Un problème est survenu : " + msg, 'error');
-      history.pop();
-      store.set('mi_history', history);
-      return;
-    }
+      <div class="formula-box">
+        <span class="mini-label">EXPRESSION LOGIQUE</span>
+        <code id="formula">S = A ET B</code>
+      </div>
+    </section>
 
-    const reply = data.choices?.[0]?.message?.content?.trim() || '…';
-    history.push({ role: 'assistant', content: reply });
-    store.set('mi_history', history);
+    <section class="panel" aria-labelledby="truth-title">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">02 / SCIENCE</span>
+          <h2 id="truth-title">Table de vérité</h2>
+        </div>
+      </div>
+      <p class="description">Toutes les combinaisons possibles des entrées et leurs résultats.</p>
 
-    addMsg('assistant', reply);
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>A</th>
+              <th id="headerB">B</th>
+              <th>Sortie S</th>
+            </tr>
+          </thead>
+          <tbody id="truthBody"></tbody>
+        </table>
+      </div>
+      <p class="small-note">La ligne active correspond aux valeurs choisies dans la simulation.</p>
+    </section>
 
-  } catch (e) {
-    typingWrapper.remove();
-    addMsg('assistant', "⚠️ Connexion interrompue. Vérifiez votre réseau internet.", 'error');
-    history.pop();
-    store.set('mi_history', history);
-  } finally {
-    $('sendBtn').disabled = false;
-  }
-}
+    <section class="panel" aria-labelledby="challenge-title">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">03 / ENTRAÎNEMENT</span>
+          <h2 id="challenge-title">Défi logique</h2>
+        </div>
+        <span id="challengeCount" class="counter">Question 1</span>
+      </div>
 
-function regenerateLast() {
-  if (history.length && history[history.length - 1].role === 'assistant') {
-    history.pop();
-  }
-  if (history.length && history[history.length - 1].role === 'user') {
-    const lastUserText = history.pop().content;
-    store.set('mi_history', history);
-    renderHistory();
-    composer.value = lastUserText;
-    send();
-  }
-}
+      <p id="challengeQuestion" class="challenge-question">
+        Avec la porte ET, quelle est la sortie si A = 1 et B = 1 ?
+      </p>
 
-function newChat() {
-  history = [];
-  store.set('mi_history', history);
-  renderHistory();
-  closeMenu();
-}
+      <div id="answerChoices" class="answer-grid">
+        <button class="answer-button" type="button" data-answer="0">0 — Faux</button>
+        <button class="answer-button" type="button" data-answer="1">1 — Vrai</button>
+      </div>
 
-/* ---------- Fonctionnalités Vocales & Actions ---------- */
-function copyText(txt) {
-  navigator.clipboard.writeText(txt);
-  alert('Texte copié dans le presse-papier !');
-}
+      <p id="challengeFeedback" class="feedback" aria-live="polite">
+        Choisis une réponse pour vérifier ta compréhension.
+      </p>
+      <button id="nextChallenge" class="button button-primary" type="button">
+        Question suivante →
+      </button>
+      <p id="score" class="small-note">Score : 0 / 0</p>
+    </section>
 
-function speakText(btn, txt) {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(txt);
-    utterance.lang = 'fr-FR';
-    window.speechSynthesis.speak(utterance);
-  } else {
-    alert("La synthèse vocale n'est pas supportée par votre navigateur.");
-  }
-}
-
-function toggleVoiceInput() {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    alert("La reconnaissance vocale n'est pas supportée par votre navigateur.");
-    return;
-  }
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'fr-FR';
-
-  const micBtn = $('micBtn');
-  micBtn.style.color = '#ff4f5e';
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    composer.value += (composer.value ? ' ' : '') + transcript;
-    micBtn.style.color = '#8ab4f8';
-  };
-
-  recognition.onerror = () => { micBtn.style.color = '#8ab4f8'; };
-  recognition.onend = () => { micBtn.style.color = '#8ab4f8'; };
-
-  recognition.start();
-}
-
-/* ---------- Menu & Modales ---------- */
-function openMenu() { $('menu').classList.add('open');$('overlay').classList.add('open'); }
-function closeMenu() { $('menu').classList.remove('open');$('overlay').classList.remove('open'); }
-
-function showModal(html) { $('modal-body').innerHTML = html; $('modal').style.display = 'flex'; closeMenu(); }
-function closeModal() { $('modal-body').innerHTML = '';$('modal').style.display = 'none'; }
-
-function openSettings() {
-  showModal(`
-    <h3>⚙️ Réglages de MANASSE IA</h3>
-    <p class="hint">Personnalisez votre modèle de langage et votre clé d'accès.</p>
-    <div class="field-label">Clé API Groq</div>
-    <input class="field" id="keyField" type="password" placeholder="Collez votre clé gsk_...">
-    <div class="field-label">Modèle IA</div>
-    <select class="field" id="modelField">
-      ${MODELS.map(m => `<option value="${m.id}">${m.label}</option>`).join('')}
-    </select>
-    <div class="actions">
-      <button class="btn" onclick="saveSettings()">Enregistrer</button>
-      <button class="btn alt" onclick="closeModal()">Annuler</button>
-    </div>
-  `);
-  $('keyField').value = apiKey;
-  $('modelField').value = model;
-}
-
-function saveSettings() {
-  const k = $('keyField').value.trim();
-  if (k) apiKey = k;
-  model = $('modelField').value;
-  store.set('mi_key', apiKey);
-  store.set('mi_model', model);
-  closeModal();
-}
-
-function openMemory() {
-  showModal(`
-    <h3>🧠 Mémoire à long terme</h3>
-    <p class="hint">Ajoutez des consignes permanentes que MANASSE IA gardera en mémoire lors de toutes vos sessions.</p>
-    <input class="field" id="memField" placeholder="Ex: Je suis développeur Web à Kinshasa">
-    <div class="actions" style="margin-top:10px"><button class="btn" onclick="addMemory()">＋ Ajouter un souvenir</button></div>
-    <div id="memList" style="margin-top:14px"></div>
-  `);
-  renderMemories();
-}
-
-function renderMemories() {
-  const box = $('memList'); if (!box) return;
-  box.innerHTML = memories.length ? '' : '<p class="hint">Aucun souvenir mémorisé.</p>';
-  memories.forEach((m, i) => {
-    const item = document.createElement('div');
-    item.className = 'mem-item';
-    item.innerHTML = `<span>${m}</span><button onclick="deleteMemory(${i})">✕</button>`;
-    box.appendChild(item);
-  });
-}
-
-function addMemory() {
-  const v = $('memField').value.trim();
-  if (!v) return;
-  memories.push(v);
-  store.set('mi_memories', memories);
-  $('memField').value = '';
-  renderMemories();
-}
-
-function deleteMemory(index) {
-  memories.splice(index, 1);
-  store.set('mi_memories', memories);
-  renderMemories();
-}
-
-function openAbout() {
-  showModal(`
-    <h3>ℹ️ À propos de MANASSE IA</h3>
-    <p class="hint" style="margin-top:10px">
-      <b>MANASSE IA</b> est un système d'intelligence artificielle avancé de haute précision.<br><br>
-      <b>Créateur & Développeur :</b> ${CREATOR}<br>
-      <b>Version :</b> 2.0 (Ultra Edition)
-    </p>
-    <div class="actions"><button class="btn alt" onclick="closeModal()">Fermer</button></div>
-  `);
-}
-
-window.onload = () => {
-  renderHistory();
-};
-</script>
+    <footer>
+      <p><strong>CircuitPlay</strong> — Un projet de la startup scientifique scolaire.</p>
+      <p>Conçu pour apprendre, expérimenter et innover. Fonctionne sans compte.</p>
+    </footer>
+  </main>
 </body>
 </html>
