@@ -3,18 +3,10 @@
 
   const $ = (s) => document.querySelector(s);
   const app = $('#app'), stage = $('#stage'), chat = $('#chat'), input = $('#input');
-  const btnAct = $('#btnAct'), btnAttach = $('#btnAttach');
-  const fileInput = $('#file'), preview = $('#preview'), dlg = $('#settings');
+  const btnAct = $('#btnAct'), dlg = $('#settings');
 
   const API = 'https://api.groq.com/openai/v1/chat/completions';
-  
-  // Modèles Groq mis à jour selon ton panneau (GPT OSS / Qwen)
-  const FALLBACK_MODELS = [
-    'gpt-oss-120b',
-    'gpt-oss-20b',
-    'qwen-3.8-27b',
-    'llama-3.3-70b-versatile'
-  ];
+  const FALLBACK_MODELS = ['gpt-oss-120b', 'gpt-oss-20b', 'llama-3.3-70b-versatile'];
 
   const ACCENTS = {
     violet: { a: [139, 92, 246], b: [34, 211, 238] },
@@ -42,7 +34,7 @@
   let controller = null;
   let busy = false, listening = false, speaking = false;
 
-  // Orbe holographique
+  // Orbe holographique d'origine intact
   const orb = (() => {
     const cv = $('#orb'), ctx = cv.getContext('2d');
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -193,22 +185,20 @@
   }
 
   function systemPrompt() {
-    let prompt = "Tu es MNL IA, un assistant personnel intelligent, souverain et ultra-rapide. " +
+    let prompt = "Tu es MNL IA, un assistant personnel intelligent et souverain. " +
       (settings.name ? "L'utilisateur s'appelle " + settings.name + ". " : "") +
       (settings.persona ? "Personnalité : " + settings.persona + " " : "");
     
     if (settings.customKnowledge) {
-      prompt += "\n\n[INSTRUCTIONS CRITIQUES ET BASE DE DONNÉES PRIVÉE DE L'UTILISATEUR] :\n" +
-                "Utilise en priorité absolue les informations ci-dessous pour répondre aux questions, même si le modèle public hésite ou n'a pas l'information :\n" + 
-                settings.customKnowledge;
+      prompt += "\n\n[BASE DE DONNÉES PRIVÉE DE L'UTILISATEUR - PRIORITAIRE] :\n" + settings.customKnowledge;
     }
     return prompt;
   }
 
   async function streamWithFallback(messages, signal, onText) {
     const modelsToTry = [settings.model, ...FALLBACK_MODELS.filter(m => m !== settings.model)];
-    
     let lastError = null;
+
     for (const currentModel of modelsToTry) {
       try {
         const res = await fetch(API, {
@@ -226,9 +216,7 @@
           })
         });
 
-        if (!res.ok) {
-          throw new Error('Erreur HTTP ' + res.status);
-        }
+        if (!res.ok) throw new Error('Erreur HTTP ' + res.status);
 
         const reader = res.body.getReader();
         const dec = new TextDecoder();
@@ -267,7 +255,7 @@
     const text = (raw || '').trim();
     if (!text || busy) return;
     if (!settings.apiKey) {
-      toast('Ajoute ta clé API Groq dans les réglages');
+      toast('Ajoute ta clé API dans les réglages');
       openSettings();
       return;
     }
@@ -300,9 +288,9 @@
       history.pop();
       bot.el.remove();
       if (settings.customKnowledge) {
-        addMsg('model', "⚠️ Réseau ralenti, mais voici ce que j'ai trouvé dans tes données personnelles enregistrées :\n\n" + settings.customKnowledge, { error: false });
+        addMsg('model', "⚠️ Réseau ralenti, mais voici ta base enregistrée :\n\n" + settings.customKnowledge, { error: false });
       } else {
-        addMsg('model', 'Erreur : ' + (e.message || 'Vérifie ta clé API Groq.'), { error: true });
+        addMsg('model', 'Erreur : Vérifie ta clé API ou ta connexion.', { error: true });
       }
     } finally {
       controller = null;
@@ -334,6 +322,7 @@
     renderHistory();
   });
 
+  // Gestion des réglages (fenêtre native <dialog>)
   function openSettings() {
     $('#setName').value = settings.name;
     $('#setKey').value = settings.apiKey;
@@ -341,20 +330,48 @@
     $('#setPersona').value = settings.persona;
     $('#setCustomKnowledge').value = settings.customKnowledge || '';
     $('#setSpeak').checked = settings.speak;
+    buildSwatches();
     if (!dlg.open) dlg.showModal();
+  }
+
+  function buildSwatches() {
+    const box = $('#swatches');
+    box.innerHTML = '';
+    Object.keys(ACCENTS).forEach((name) => {
+      const c = ACCENTS[name];
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sw' + (settings.accent === name ? ' on' : '');
+      b.style.background = 'linear-gradient(135deg, rgb(' + c.a + '), rgb(' + c.b + '))';
+      b.onclick = () => {
+        settings.accent = name;
+        applyAccent(name);
+        buildSwatches();
+      };
+      box.appendChild(b);
+    });
   }
 
   $('#btnSettings').addEventListener('click', openSettings);
   $('#btnCancel').addEventListener('click', () => dlg.close());
+  
   $('#settingsForm').addEventListener('submit', () => {
     settings.apiKey = $('#setKey').value.trim();
     settings.model = $('#setModel').value;
     settings.name = $('#setName').value.trim();
     settings.persona = $('#setPersona').value.trim();
     settings.customKnowledge = $('#setCustomKnowledge').value.trim();
-    settings.speak = $('#setSpeak'].checked;
+    settings.speak = $('#setSpeak').checked;
     saveSettings();
-    toast('Réglages & Mémoire enregistrés ✓');
+    toast('Réglages enregistrés ✓');
+  });
+
+  $('#btnWipe').addEventListener('click', () => {
+    history = [];
+    store.del('mnl_history');
+    renderHistory();
+    dlg.close();
+    toast('Conversation effacée');
   });
 
   applyAccent(settings.accent);
