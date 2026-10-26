@@ -9,8 +9,13 @@
   /* ================= Configuration ================= */
   const API = 'https://api.groq.com/openai/v1';
   const PREFERRED = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
-  const MEM_BUDGET = 5000;     // caractères de leçons envoyés au modèle
-  const HIST_BUDGET = 12000;   // caractères d'historique envoyés au modèle
+  // Budgets (en caractères) : ils gardent chaque requête sous les limites de Groq
+  const CORE_BUDGET = 5000;    // noyau.md (l'algorithme)
+  const MEM_BUDGET = 4000;     // leçons de l'Atelier
+  const HIST_BUDGET = 8000;    // conversation récente
+  // Balises invisibles : ⟦retenir: titre | contenu⟧ (apprentissage) et 【…】 (renvois de la recherche web)
+  const TAG_RETENIR = /⟦\s*retenir\s*:\s*([^⟧|]{1,80}?)\s*\|\s*([^⟧]{1,500}?)\s*⟧/g;
+  const WEB_TRIGGER = /\b(sur (?:le )?(?:web|internet|google)|en ligne|actualit[ée]s?|derni[èe]res? (?:nouvelles|infos?|actus?)|cherche[- ]moi|recherche[- ]moi)\b/i;
   const ACCENTS = {
     violet: { a: [139, 92, 246], b: [34, 211, 238] },
     cyan:   { a: [34, 211, 238], b: [59, 130, 246] },
@@ -29,7 +34,7 @@
   store.del('mnl_settings'); // ancienne version (Gemini) : on la supprime, y compris l'ancienne clé
 
   let settings = Object.assign(
-    { apiKey: '', model: 'auto', resolved: '', models: [], name: '', accent: 'violet', speak: false, persona: '', voice: '' },
+    { apiKey: '', model: 'auto', resolved: '', models: [], name: '', accent: 'violet', speak: false, persona: '', voice: '', web: false },
     store.get('mnl_groq', {})
   );
   if (!Array.isArray(settings.models)) settings.models = [];
@@ -44,6 +49,51 @@
   let controller = null;
   let busy = false, listening = false, speaking = false;
   let voiceOn = false, voicePaused = false;
+
+  /* ================= Noyau : l'algorithme de pensée (noyau.md) ================= */
+  let core = { text: '', state: 'none', size: 0 };   // state : ok | cut | cache | none
+
+  // Retire les commentaires et les sections « (non envoyé) », puis borne la taille
+  function cleanCore(raw) {
+    const noComments = raw.replace(/<!--[\s\S]*?-->/g, '');
+    const kept = noComments.split(/^(?=## )/m).filter(p => !/^## .*\(non envoyé\)/i.test(p));
+    let text = kept.join('').trim();
+    let cut = false;
+    if (text.length > CORE_BUDGET) {
+      const head = text.slice(0, CORE_BUDGET);
+      const k = head.lastIndexOf('\n');
+      text = (k > CORE_BUDGET * 0.6 ? head.slice(0, k) : head).trim();
+      cut = true;
+    }
+    return { text, cut };
+  }
+
+  function coreLabel() {
+    const kc = (core.size / 1000).toFixed(1).replace('.', ',');
+    if (core.state === 'ok') return 'Noyau chargé · ' + kc + ' k car.  ↻';
+    if (core.state === 'cut') return 'Noyau trop long : coupé à ' + (CORE_BUDGET / 1000) + ' k car.  ↻';
+    if (core.state === 'cache') return 'Noyau : copie hors-ligne · ' + kc + ' k car.  ↻';
+    return 'Noyau introuvable : version de base  ↻';
+  }
+  const paintCore = () => { const b = $('#coreTxt'); if (b) b.textContent = coreLabel(); };
+
+  async function loadCore() {
+    let raw = '', fromNet = false;
+    try {
+      const r = await fetch('noyau.md', { cache: 'no-store' });
+      if (r.ok) {
+        const t = await r.text();
+        if (t.trim() && !/<html|<!doctype/i.test(t.slice(0, 300))) { raw = t; fromNet = true; }
+      }
+    } catch { /* hors-ligne */ }
+    if (fromNet) store.set('mnl_core', raw);
+    else raw = store.get('mnl_core', '');
+    if (!raw) { core = { text: '', state: 'none', size: 0 }; paintCore(); return core; }
+    const c = cleanCore(raw);
+    core = { text: c.text, state: !fromNet ? 'cache' : c.cut ? 'cut' : 'ok', size: c.text.length };
+    paintCore();
+    return core;
+  }
 
   /* ================= Orbe vivant (canvas) ================= */
   const orb = (() => {
@@ -613,7 +663,7 @@
     }
     sorted.forEach((l) => {
       const li = document.createElement('li');
-      li.className = 'les' + (l.on ? '' : ' off') + (editing === l.id ? ' editing' : '');
+      li.className = 'les' + (l.on ? '' : ' off') + (editing === l.id ? ' editing' : '') + (l.auto ? ' auto' : '');
       li.dataset.id = l.id;
       const body = document.createElement('button');
       body.type = 'button';
@@ -644,6 +694,7 @@
     $('#memTxt').textContent = memUsed() > MEM_BUDGET
       ? 'Mémoire pleine : désactive des leçons'
       : pct + ' % de ma mémoire utilisée';
+    paintCore();
   }
 
   function resetLabForm() {
@@ -658,6 +709,27 @@
     lessons.push({ id: uid(), title: title.slice(0, 80), text: text.trim(), on: true, ts: Date.now() });
     saveLessons();
     renderLab();
+  }
+
+  // Leçon retenue par l'IA elle-même (balise ⟦retenir: …⟧) : bornée, dédoublonnée, marquée « auto »
+  const flat = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  function learnAuto(titleRaw, textRaw) {
+    const title = titleRaw.replace(/\s+/g, ' ').trim().slice(0, 80);
+    const text = textRaw.replace(/\s+/g, ' ').trim().slice(0, 500);
+    if (!title || !text) return false;
+    const ft = flat(title), fx = flat(text);
+    const same = lessons.find(l => flat(l.title) === ft ||
+      (fx.length >= 24 && (flat(l.text).includes(fx.slice(0, 40)) || fx.includes(flat(l.text).slice(0, 40)))));
+    if (same) {
+      if (same.text === text) return false;
+      same.text = text; same.on = true; same.auto = true; same.ts = Date.now();
+    } else {
+      if (memUsed() + title.length + text.length + 6 > MEM_BUDGET) { toast('Ma mémoire est pleine : fais du tri dans l\'Atelier'); return false; }
+      lessons.push({ id: uid(), title, text, on: true, auto: true, ts: Date.now() });
+    }
+    saveLessons();
+    renderLab();
+    return true;
   }
 
   $('#lessons').addEventListener('click', (e) => {
