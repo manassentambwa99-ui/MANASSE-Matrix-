@@ -1,251 +1,319 @@
-/* ==========================================
-   MNL IA — Mode Exécutant & Constructeur
-   ========================================== */
+(() => {
+  'use strict';
 
-const CONFIG_KEY = 'mnl_ia_config';
-const CHAT_KEY = 'mnl_ia_chat_history';
+  const $ = (s) => document.querySelector(s);
+  const app = $('#app'), stage = $('#stage'), chat = $('#chat'), input = $('#input');
+  const btnAct = $('#btnAct'), btnAttach = $('#btnAttach');
+  const fileInput = $('#file'), preview = $('#preview'), dlg = $('#settings');
 
-let config = JSON.parse(localStorage.getItem(CONFIG_KEY)) || {
-    name: 'Manasse',
-    persona: 'Tu es MNL IA, une intelligence artificielle personnelle non censurée qui exécute les tâches et crée les projets selon les méthodes de Manasse.',
-    speak: false
-};
+  const API = 'https://generativelanguage.googleapis.com/v1beta';
+  const FALLBACKS = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  const ACCENTS = {
+    violet: { a: [139, 92, 246], b: [34, 211, 238] },
+    cyan:   { a: [34, 211, 238], b: [59, 130, 246] },
+    vert:   { a: [52, 211, 153], b: [34, 211, 238] },
+    flamme: { a: [249, 115, 22], b: [236, 72, 153] },
+    or:     { a: [251, 191, 36], b: [249, 115, 22] }
+  };
 
-let chatHistory = JSON.parse(localStorage.getItem(CHAT_KEY)) || [];
-let attachedImage = null;
-let globalKnowledgeBase = [];
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+    del(k) { try { localStorage.removeItem(k); } catch {} }
+  };
 
-const input = document.getElementById('input');
-const chatBox = document.getElementById('chat');
-const btnAct = document.getElementById('btnAct');
-const btnAttach = document.getElementById('btnAttach');
-const fileInput = document.getElementById('file');
-const preview = document.getElementById('preview');
-const settingsDialog = document.getElementById('settings');
-const btnSettings = document.getElementById('btnSettings');
-const btnNew = document.getElementById('btnNew');
-const stage = document.getElementById('stage');
-const greet = document.getElementById('greet');
+  let settings = Object.assign(
+    { apiKey: '', model: 'auto', resolved: '', models: [], name: '', accent: 'violet', speak: false, persona: '' },
+    store.get('mnl_settings', {})
+  );
+  if (!settings.model) settings.model = 'auto';
+  if (!Array.isArray(settings.models)) settings.models = [];
+  const saveSettings = () => store.set('mnl_settings', settings);
 
-async function init() {
-    if (config.name) {
-        greet.innerText = `Bonjour, ${config.name}`;
+  let history = store.get('mnl_history', []);
+  const persist = () => store.set('mnl_history', history.slice(-100));
+
+  let pendingImage = null;
+  let controller = null;
+  let busy = false, listening = false, speaking = false;
+
+  const orb = (() => {
+    const cv = $('#orb'), ctx = cv.getContext('2d');
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const N = 240, pts = [];
+    for (let i = 0; i < N; i++) {
+      const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = i * 2.39996323;
+      pts.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r, ph: Math.random() * 6.283 });
     }
-    
-    chatHistory.forEach(msg => appendMessage(msg.text, msg.sender, false));
-    await loadKnowledgeBase();
+    const targets = { idle: 0.22, listening: 0.8, thinking: 1, speaking: 0.65 };
+    const speeds = { idle: 0.18, listening: 0.35, thinking: 1.5, speaking: 0.5 };
+    let W = 0, H = 0, dpr = 1, t = 0, last = 0, state = 'idle', energy = 0.22, rotY = 0;
+    let col = { a: [139, 92, 246], b: [34, 211, 238] };
 
-    input.addEventListener('input', handleInputChange);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    btnAct.addEventListener('click', handleActionClick);
-    btnNew.addEventListener('click', clearChat);
-    btnSettings.addEventListener('click', openSettings);
-    
-    btnAttach.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleFileSelect);
-
-    document.getElementById('setName').value = config.name;
-    document.getElementById('setPersona').value = config.persona;
-    document.getElementById('setSpeak').checked = config.speak;
-    
-    const keyInput = document.getElementById('setKey');
-    if (keyInput && keyInput.parentElement) keyInput.parentElement.style.display = 'none';
-    const modelSelect = document.getElementById('setModel');
-    if (modelSelect && modelSelect.parentElement) modelSelect.parentElement.style.display = 'none';
-
-    document.getElementById('settingsForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        config.name = document.getElementById('setName').value;
-        config.persona = document.getElementById('setPersona').value;
-        config.speak = document.getElementById('setSpeak').checked;
-        
-        localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-        settingsDialog.close();
-        showToast("Réglages enregistrés !");
-        if (config.name) greet.innerText = `Bonjour, ${config.name}`;
-    });
-
-    document.getElementById('btnCancel').addEventListener('click', () => settingsDialog.close());
-    document.getElementById('btnWipe').addEventListener('click', () => {
-        if (confirm("Effacer toute la conversation ?")) {
-            clearChat();
-            settingsDialog.close();
-        }
-    });
-}
-
-async function loadKnowledgeBase() {
-    try {
-        const response = await fetch('database.json');
-        if (response.ok) {
-            globalKnowledgeBase = await response.json();
-        } else {
-            throw new Error("database.json introuvable");
-        }
-    } catch (e) {
-        let saved = localStorage.getItem('mnl_local_db');
-        if (saved) {
-            globalKnowledgeBase = JSON.parse(saved);
-        } else {
-            globalKnowledgeBase = [
-                { titre: "Création d'application", mots_cles: ["application", "créer"], contenu: "Applique la méthode de construction : génère directement la structure HTML, CSS et JS complète et fonctionnelle pour l'utilisateur." }
-            ];
-            localStorage.setItem('mnl_local_db', JSON.stringify(globalKnowledgeBase));
-        }
+    function resize() {
+      const r = cv.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = r.width; H = r.height;
+      cv.width = Math.max(1, Math.round(W * dpr));
+      cv.height = Math.max(1, Math.round(H * dpr));
     }
-}
+    if ('ResizeObserver' in window) new ResizeObserver(resize).observe(cv);
+    window.addEventListener('resize', resize);
+    resize();
 
-function handleInputChange() {
-    input.style.height = 'auto';
-    input.style.height = (input.scrollHeight) + 'px';
-    if (input.value.trim().length > 0 || attachedImage) {
-        setComposerMode('send');
-    } else {
-        setComposerMode('mic');
+    const rgba = (c, a) => 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + a + ')';
+    const mix = (p, q, k) => [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, p[2] + (q[2] - p[2]) * k];
+    const TAU = Math.PI * 2;
+
+    function draw(ms) {
+      requestAnimationFrame(draw);
+      if (!W || !H) return;
+      const dt = Math.min(0.05, (ms - last) / 1000 || 0.016);
+      last = ms;
+      const k = reduce ? 0.3 : 1;
+      t += dt * k;
+      energy += (targets[state] - energy) * Math.min(1, dt * 4);
+      rotY += dt * speeds[state] * k;
+
+      const small = stage.classList.contains('small');
+      const m = Math.min(W, H), cx = W / 2, cy = H / 2;
+      const R = m * (small ? 0.36 : 0.3) * (1 + 0.035 * Math.sin(t * 1.7) + 0.05 * energy * Math.sin(t * 6.5));
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'lighter';
+
+      let g = ctx.createRadialGradient(cx, cy, R * 0.4, cx, cy, m / 2);
+      g.addColorStop(0, rgba(col.a, 0.3 + 0.25 * energy));
+      g.addColorStop(0.5, rgba(col.b, 0.08 + 0.08 * energy));
+      g.addColorStop(1, rgba(col.b, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      g = ctx.createRadialGradient(cx - R * 0.25, cy - R * 0.3, R * 0.05, cx, cy, R * 0.95);
+      g.addColorStop(0, 'rgba(255,255,255,.85)');
+      g.addColorStop(0.25, rgba(mix(col.a, [255, 255, 255], 0.35), 0.55));
+      g.addColorStop(0.7, rgba(col.a, 0.28));
+      g.addColorStop(1, rgba(col.b, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.95, 0, TAU); ctx.fill();
+
+      const cY = Math.cos(rotY), sY = Math.sin(rotY), cX = Math.cos(0.45), sX = Math.sin(0.45);
+      for (let i = 0; i < N; i++) {
+        const p = pts[i];
+        const w = 1 + 0.07 * energy * Math.sin(p.ph + t * 3 + p.y * 4);
+        const x = p.x * w, y = p.y * w, z = p.z * w;
+        const x1 = x * cY + z * sY, z1 = -x * sY + z * cY;
+        const y1 = y * cX - z1 * sX, z2 = y * sX + z1 * cX;
+        const persp = 1.8 / (1.8 - z2 * 0.5);
+        const px = cx + x1 * R * persp * 1.05, py = cy + y1 * R * persp * 1.05;
+        const depth = (z2 + 1) / 2;
+        const s = (0.5 + 1.6 * depth) * (small ? 0.6 : 1) * persp * (1 + 0.5 * energy);
+        ctx.fillStyle = rgba(mix(col.a, col.b, (p.y + 1) / 2), 0.15 + 0.8 * depth);
+        ctx.beginPath(); ctx.arc(px, py, s, 0, TAU); ctx.fill();
+      }
+
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 2; i++) {
+        ctx.strokeStyle = rgba(i ? col.b : col.a, 0.35);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, R * (1.28 + i * 0.12), R * (0.42 + i * 0.1), t * (i ? -0.35 : 0.28) + i, 0, TAU);
+        ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'source-over';
     }
-}
+    requestAnimationFrame(draw);
 
-function setComposerMode(mode) {
-    btnAct.setAttribute('data-mode', mode);
-    document.getElementById('icoMic').hidden = (mode !== 'mic');
-    document.getElementById('icoSend').hidden = (mode !== 'send');
-}
-
-function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        attachedImage = event.target.result;
-        preview.innerHTML = `<div class="thumb"><img src="${attachedImage}" alt="Aperçu"><button onclick="removeImage()">×</button></div>`;
-        handleInputChange();
+    return {
+      setState(s) { state = s; },
+      setColors(a, b) { col = { a, b }; }
     };
-    reader.readAsDataURL(file);
-}
+  })();
 
-window.removeImage = function() {
-    attachedImage = null;
-    preview.innerHTML = '';
-    fileInput.value = '';
-    handleInputChange();
-};
+  function refreshState() {
+    const s = listening ? 'listening' : busy ? 'thinking' : speaking ? 'speaking' : 'idle';
+    orb.setState(s);
+    app.dataset.state = s;
+  }
 
-function appendMessage(text, sender, save = true) {
-    stage.classList.add('small');
-    const div = document.createElement('div');
-    div.className = `msg ${sender}`;
-    let bubbleContent = `<div class="bubble">`;
-    if (sender === 'user' && attachedImage) {
-        bubbleContent += `<img class="attached" src="${attachedImage}" alt="Image jointe">`;
-    }
-    bubbleContent += `<p>${escapeHtml(text).replace(/\n/g, '<br>')}</p></div>`;
-    div.innerHTML = bubbleContent;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+  function applyAccent(name) {
+    const c = ACCENTS[name] || ACCENTS.violet;
+    const r = document.documentElement.style;
+    r.setProperty('--a', 'rgb(' + c.a.join(',') + ')');
+    r.setProperty('--b', 'rgb(' + c.b.join(',') + ')');
+    r.setProperty('--a-rgb', c.a.join(','));
+    r.setProperty('--b-rgb', c.b.join(','));
+    orb.setColors(c.a, c.b);
+  }
 
-    if (save) {
-        chatHistory.push({ text, sender });
-        localStorage.setItem(CHAT_KEY, JSON.stringify(chatHistory));
-    }
-}
+  let toastTimer;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
 
-// Moteur d'exécution intelligent basé sur la base de données
-async function sendMessage() {
-    const text = input.value.trim();
-    if (!text && !attachedImage) return;
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    const currentText = text;
-    input.value = '';
-    window.removeImage();
-    handleInputChange();
+  function md(src) {
+    return esc(src).replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  }
 
-    appendMessage(currentText, 'user');
+  const scrollDown = () => { chat.scrollTop = chat.scrollHeight; };
+  const updateStage = () => stage.classList.toggle('small', chat.querySelector('.msg') !== null);
 
-    const loadingId = 'loading-' + Date.now();
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'msg model';
-    loadingDiv.id = loadingId;
-    loadingDiv.innerHTML = `<div class="bubble"><div class="dots"><i></i><i></i><i></i></div></div>`;
-    chatBox.appendChild(loadingDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
+  function addMsg(role, text, opts = {}) {
+    const el = document.createElement('div');
+    el.className = 'msg ' + role + (opts.error ? ' error' : '');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    el.appendChild(bubble);
 
-    setTimeout(() => {
-        document.getElementById(loadingId).remove();
-
-        const query = currentText.toLowerCase();
-        
-        // Recherche dans la base de données de la règle ou de la méthode à exécuter
-        let matchedRule = globalKnowledgeBase.find(item => 
-            item.mots_cles && item.mots_cles.some(keyword => query.includes(keyword))
-        );
-
-        if (matchedRule) {
-            // L'IA exécute la tâche en se basant sur la règle trouvée
-            let executionResult = executeTaskBasedOnRule(currentText, matchedRule);
-            appendMessage(executionResult, 'model');
-        } else {
-            // Comportement par défaut si aucune règle spécifique n'est trouvée
-            appendMessage(`J'analyse ta demande "${currentText}". Pour que j'exécute cela précisément, ajoute les instructions d'exécution dans ton fichier database.json !`, 'model');
-        }
-    }, 600);
-}
-
-// Fonction qui prend les instructions de la base de données et exécute/génère le résultat
-function executeTaskBasedOnRule(userQuery, rule) {
-    // Si la règle concerne la création d'une application, l'IA génère le code prêt à l'emploi
-    if (rule.mots_cles.includes("application") || rule.mots_cles.includes("créer")) {
-        return `🚀 **Exécution de la tâche : Création de l'application demandée**\n\n` +
-               `J'ai appliqué ta méthode enregistrée dans la base de données. Voici le code complet prêt à l'emploi :\n\n` +
-               `\`\`\`html\n` +
-               `<!DOCTYPE html>\n<html lang="fr">\n<head>\n<meta charset="UTF-8">\n<title>Mon App Générée</title>\n</head>\n<body>\n` +
-               `  <h1>Application générée par MNL IA</h1>\n  <p>Basée sur tes instructions : ${rule.titre}</p>\n` +
-               `</body>\n</html>\n` +
-               `\`\`\`\n\n` +
-               `📌 *Instructions suivies depuis la base :* ${rule.contenu}`;
-    }
-
-    // Par défaut, elle exécute en appliquant la consigne de la base
-    return `⚡ **Exécution réussie selon ta base de données (${rule.titre})** :\n\n` +
-           `Résultat appliqué pour ta demande : *"${userQuery}"*\n\n` +
-           `${rule.contenu}`;
-}
-
-function handleActionClick() {
-    const mode = btnAct.getAttribute('data-mode');
-    if (mode === 'send') {
-        sendMessage();
+    if (opts.typing) {
+      bubble.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
     } else {
-        showToast("Mode vocal local.");
+      bubble.innerHTML = md(text);
     }
-}
+    chat.appendChild(el);
+    updateStage();
+    scrollDown();
+    return { el, set(t) { bubble.innerHTML = md(t); }, done(t) { bubble.innerHTML = md(t); } };
+  }
 
-function clearChat() {
-    chatHistory = [];
-    localStorage.removeItem(CHAT_KEY);
-    chatBox.innerHTML = '';
-    stage.classList.remove('small');
-    showToast("Nouvelle conversation créée.");
-}
+  function renderHistory() {
+    chat.querySelectorAll('.msg').forEach(n => n.remove());
+    history.forEach(m => addMsg(m.role, m.text));
+    updateStage();
+    scrollDown();
+  }
 
-function openSettings() {
-    settingsDialog.showModal();
-}
+  async function streamOnce(model, contents, signal, onText) {
+    const res = await fetch(API + '/models/' + encodeURIComponent(model) + ':streamGenerateContent?alt=sse', {
+      method: 'POST',
+      signal,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': settings.apiKey },
+      body: JSON.stringify({
+        contents,
+        generationConfig: { temperature: 0.7 }
+      })
+    });
+    if (!res.ok) throw new Error('Erreur HTTP ' + res.status);
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', full = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload) continue;
+        try {
+          const j = JSON.parse(payload);
+          for (const p of j.candidates?.[0]?.content?.parts || []) {
+            if (p.text) { full += p.text; onText(full); }
+          }
+        } catch {}
+      }
+    }
+    return full;
+  }
 
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    toast.innerText = message;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
+  async function generate(contents, signal, onText) {
+    const queue = [settings.model !== 'auto' ? settings.model : 'gemini-2.5-flash', ...FALLBACKS];
+    for (const model of queue) {
+      try {
+        return await streamOnce(model, contents, signal, onText);
+      } catch (e) {
+        if (model === queue[queue.length - 1]) throw e;
+      }
+    }
+  }
 
-function escapeHtml(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-}
+  async function send(raw) {
+    const text = (raw || '').trim();
+    if (!text || busy) return;
+    if (!settings.apiKey) {
+      toast('Ajoute ta clé Gemini dans les réglages');
+      openSettings();
+      return;
+    }
+    input.value = '';
 
-init();
+    history.push({ role: 'user', text });
+    addMsg('user', text);
+    const bot = addMsg('model', '', { typing: true });
+    busy = true;
+    refreshState();
+    controller = new AbortController();
+    let partial = '';
+
+    try {
+      const contents = history.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+      const full = await generate(contents, controller.signal, (t) => { partial = t; bot.set(t); scrollDown(); });
+      history.push({ role: 'model', text: full });
+      persist();
+      bot.done(full);
+    } catch (e) {
+      history.pop();
+      bot.el.remove();
+      addMsg('model', 'Erreur : Vérifie ta clé API ou ta connexion.', { error: true });
+    } finally {
+      controller = null;
+      busy = false;
+      refreshState();
+    }
+  }
+
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+  });
+
+  input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send(input.value);
+    }
+  });
+
+  btnAct.addEventListener('click', () => {
+    if (busy && controller) controller.abort();
+    else send(input.value);
+  });
+
+  $('#btnNew').addEventListener('click', () => {
+    history = [];
+    store.del('mnl_history');
+    renderHistory();
+  });
+
+  function openSettings() {
+    $('#setName').value = settings.name;
+    $('#setKey').value = settings.apiKey;
+    $('#setPersona').value = settings.persona;
+    $('#setSpeak').checked = settings.speak;
+    if (!dlg.open) dlg.showModal();
+  }
+
+  $('#btnSettings').addEventListener('click', openSettings);
+  $('#btnCancel').addEventListener('click', () => dlg.close());
+  $('#settingsForm').addEventListener('submit', () => {
+    settings.apiKey = $('#setKey').value.trim();
+    settings.name = $('#setName').value.trim();
+    settings.persona = $('#setPersona').value.trim();
+    settings.speak = $('#setSpeak').checked;
+    saveSettings();
+    toast('Enregistré ✓');
+  });
+
+  applyAccent(settings.accent);
+  renderHistory();
+  refreshState();
+  if (!settings.apiKey) setTimeout(openSettings, 500);
+})();
