@@ -32,8 +32,7 @@
       <button class="ib" id="btnNew" title="Nouvelle conversation">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
       </button>
-      <button class="ib" id="btnSettings" title="Réglages & Mémoire">
-        <svg viewBox="0 0 4 4" fill="currentColor"><circle cx="2" cy="2" r="2"/></svg>
+      <button class="ib" id="btnSettings" title="Réglages">
         <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
       </button>
     </div>
@@ -56,7 +55,7 @@
         <svg viewBox="0 0 24 24"><path d="M21 12.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9-9a3.7 3.7 0 0 1 5.2 5.2l-9 9a1.8 1.8 0 0 1-2.6-2.6l8.4-8.4"/></svg>
       </button>
       <input type="file" id="file" accept="image/*" hidden>
-      <textarea id="input" rows="1" placeholder="Écris ou parle à Groq…" enterkeyhint="send"></textarea>
+      <textarea id="input" rows="1" placeholder="Écris ou parle…" enterkeyhint="send"></textarea>
       <button class="ib act" id="btnAct" data-mode="mic" title="Envoyer / parler">
         <svg viewBox="0 0 24 24" id="icoMic"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
         <svg viewBox="0 0 24 24" id="icoSend" hidden><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -66,47 +65,51 @@
   </footer>
 </div>
 
-<dialog id="settings">
-  <form method="dialog" id="settingsForm">
-    <label>Prénom
+<div id="settings" class="modal-backdrop">
+  <div class="modal-card">
+    <h3>Réglages de MNL IA</h3>
+    <div class="field-group">
+      <label>Prénom</label>
       <input type="text" id="setName" placeholder="Comment dois-je t'appeler ?" autocomplete="off">
-    </label>
+    </div>
 
-    <label>Clé API Groq (gsk_...)
-      <input type="password" id="setKey" placeholder="Colle ta clé Groq ici" autocomplete="off" spellcheck="false">
-    </label>
+    <div class="field-group">
+      <label>Clé API (Groq)</label>
+      <input type="password" id="setKey" placeholder="Colle ta clé ici (gsk_...)" autocomplete="off" spellcheck="false">
+    </div>
 
-    <label>Modèle Groq ("Gepeto")
+    <div class="field-group">
+      <label>Modèle</label>
       <select id="setModel">
-        <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Recommandé)</option>
-        <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Ultra-rapide)</option>
-        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+        <option value="gpt-oss-120b">GPT-OSS 120B</option>
+        <option value="gpt-oss-20b">GPT-OSS 20B</option>
+        <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
       </select>
-    </label>
+    </div>
 
-    <div class="field">Couleur de l'orbe<div id="swatches"></div></div>
+    <div class="field-group">
+      <label>Couleur de l'orbe</label>
+      <div id="swatches"></div>
+    </div>
 
-    <label>Mémoire Personnalisée & Base Perso (Injection directe)
-      <textarea id="setCustomKnowledge" rows="4" placeholder="Ajoute ici tes infos, tes règles ou tes données personnelles pour alimenter l'IA sans saturer..."></textarea>
-    </label>
+    <div class="field-group">
+      <label>Mémoire Personnalisée (Base Perso)</label>
+      <textarea id="setCustomKnowledge" rows="3" placeholder="Ajoute tes informations ou données personnelles ici..."></textarea>
+    </div>
 
-    <label>Personnalité de l'IA
-      <textarea id="setPersona" rows="2" placeholder="Ex : direct, technique, codeur mobile..."></textarea>
-    </label>
-
-    <label class="row">
-      <input type="checkbox" id="setSpeak">
-      <span>Répondre à voix haute</span>
-    </label>
+    <div class="field-group">
+      <label>Personnalité</label>
+      <textarea id="setPersona" rows="2" placeholder="Ex : direct, technique..."></textarea>
+    </div>
 
     <div class="btns">
       <button type="button" class="danger" id="btnWipe">Effacer chat</button>
       <span class="grow"></span>
       <button type="button" class="ghost" id="btnCancel">Fermer</button>
-      <button type="submit" class="primary" value="save">Enregistrer</button>
+      <button type="button" class="primary" id="btnSave">Enregistrer</button>
     </div>
-  </form>
-</dialog>
+  </div>
+</div>
 
 <div id="toast" role="status"></div>
 
