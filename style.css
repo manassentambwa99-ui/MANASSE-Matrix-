@@ -17,7 +17,6 @@ body{
 a{color:var(--b)}
 button{font:inherit;color:inherit;cursor:pointer}
 
-/* ---------- Fond ---------- */
 .bg{position:fixed;inset:0;z-index:0;overflow:hidden}
 .bg .grid{
   position:absolute;inset:0;
@@ -37,7 +36,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 }
 @keyframes sway{to{transform:translateX(-46%) scale(1.08)}}
 
-/* ---------- Structure ---------- */
 #app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;max-width:760px;margin:0 auto}
 
 .top{
@@ -59,7 +57,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ib:active{transform:scale(.9)}
 .ib svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
-/* ---------- Orbe ---------- */
 #stage{
   position:relative;flex:none;height:44dvh;max-height:420px;
   transition:height .7s cubic-bezier(.2,.8,.2,1);
@@ -77,7 +74,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 }
 #hello p{margin-top:4px;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
 
-/* ---------- Conversation ---------- */
 #chat{
   flex:1;min-height:0;overflow-y:auto;padding:6px 20px 14px;scroll-behavior:smooth;overscroll-behavior:contain;
   -webkit-mask-image:linear-gradient(to bottom,transparent,#000 18px);
@@ -128,7 +124,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-6px);opacity:1}}
 @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
-/* ---------- Saisie ---------- */
 .composer{padding:6px 14px calc(12px + env(safe-area-inset-bottom))}
 #preview .thumb{position:relative;display:inline-block;margin:0 0 8px 8px}
 #preview img{height:70px;border-radius:14px;border:1px solid var(--stroke);display:block}
@@ -158,7 +153,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .act.on{animation:ring 1.3s infinite}
 @keyframes ring{0%{box-shadow:0 0 0 0 rgba(var(--b-rgb),.6)}100%{box-shadow:0 0 0 14px rgba(var(--b-rgb),0)}}
 
-/* ---------- Réglages ---------- */
 dialog{
   margin:auto;border:1px solid var(--stroke);border-radius:26px;padding:22px;
   width:min(92vw,440px);max-height:90dvh;overflow-y:auto;
@@ -187,7 +181,6 @@ dialog label.row input{width:20px;height:20px;accent-color:var(--a)}
 .btns .ghost{background:rgba(255,255,255,.09)}
 .btns .danger{background:transparent;color:#fda4af;padding-left:0}
 
-/* ---------- Toast ---------- */
 #toast{
   position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));z-index:10;
   transform:translate(-50%,20px);opacity:0;pointer-events:none;
@@ -195,8 +188,3 @@ dialog label.row input{width:20px;height:20px;accent-color:var(--a)}
   font-size:14px;max-width:90vw;text-align:center;transition:.3s;
 }
 #toast.show{opacity:1;transform:translate(-50%,0)}
-
-@media (prefers-reduced-motion:reduce){
-  .bg .glow,.dots i,.act.on,.msg{animation:none!important}
-  #stage,#hello,#toast{transition:none!important}
-}
