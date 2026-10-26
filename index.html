@@ -65,51 +65,47 @@
   </footer>
 </div>
 
-<div id="settings" class="modal-backdrop">
-  <div class="modal-card">
-    <h3>Réglages de MNL IA</h3>
-    <div class="field-group">
-      <label>Prénom</label>
+<dialog id="settings">
+  <form method="dialog" id="settingsForm">
+    <label>Prénom
       <input type="text" id="setName" placeholder="Comment dois-je t'appeler ?" autocomplete="off">
-    </div>
+    </label>
 
-    <div class="field-group">
-      <label>Clé API (Groq)</label>
-      <input type="password" id="setKey" placeholder="Colle ta clé ici (gsk_...)" autocomplete="off" spellcheck="false">
-    </div>
+    <label>Clé API
+      <input type="password" id="setKey" placeholder="Colle ta clé ici" autocomplete="off" spellcheck="false">
+    </label>
 
-    <div class="field-group">
-      <label>Modèle</label>
+    <label>Modèle
       <select id="setModel">
         <option value="gpt-oss-120b">GPT-OSS 120B</option>
         <option value="gpt-oss-20b">GPT-OSS 20B</option>
         <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
       </select>
-    </div>
+    </label>
 
-    <div class="field-group">
-      <label>Couleur de l'orbe</label>
-      <div id="swatches"></div>
-    </div>
+    <div class="field">Couleur<div id="swatches"></div></div>
 
-    <div class="field-group">
-      <label>Mémoire Personnalisée (Base Perso)</label>
+    <label>Mémoire Personnalisée & Base Perso
       <textarea id="setCustomKnowledge" rows="3" placeholder="Ajoute tes informations ou données personnelles ici..."></textarea>
-    </div>
+    </label>
 
-    <div class="field-group">
-      <label>Personnalité</label>
+    <label>Personnalité
       <textarea id="setPersona" rows="2" placeholder="Ex : direct, technique..."></textarea>
-    </div>
+    </label>
+
+    <label class="row">
+      <input type="checkbox" id="setSpeak">
+      <span>Répondre à voix haute</span>
+    </label>
 
     <div class="btns">
-      <button type="button" class="danger" id="btnWipe">Effacer chat</button>
+      <button type="button" class="danger" id="btnWipe">Effacer</button>
       <span class="grow"></span>
       <button type="button" class="ghost" id="btnCancel">Fermer</button>
-      <button type="button" class="primary" id="btnSave">Enregistrer</button>
+      <button type="submit" class="primary" value="save">Enregistrer</button>
     </div>
-  </div>
-</div>
+  </form>
+</dialog>
 
 <div id="toast" role="status"></div>
 
