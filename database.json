@@ -1,72 +1,52 @@
 [
   {
-    "titre": "Salutations et Accueil",
-    "mots_cles": ["bonjour", "salut", "bonsoir", "coucou", "yo", "mbote", "commencer"],
-    "contenu": "Bonjour Manasse ! Je suis ton IA souveraine et non censurée. Je fonctionne entièrement grâce à ta base de données locale et mes scripts d'exécution. Que veux-tu qu'on construise, code ou résolve aujourd'hui ?"
+    "titre": "L'art des salutations et de la première impression",
+    "mots_cles": ["salutations", "politesse", "première impression", "relationnel"],
+    "contenu": "La salutation est le premier pont entre deux individus. Une salutation chaleureuse, accompagnée d'un sourire sincère et d'un regard assuré, donne instantanément le ton d'une interaction positive. Il est primordial d'adapter son registre de langage selon le contexte (professionnel ou familier) tout en conservant une attitude ouverte et bienveillante. Dire bonjour clairement montre de la considération pour autrui."
   },
   {
-    "titre": "Présentation de l'IA",
-    "mots_cles": ["qui es-tu", "ton nom", "c'est quoi", "mnl ia"],
-    "contenu": "Je suis **MNL IA**, ton intelligence artificielle personnelle, conçue sur mesure, hébergée sur ta PWA et nourrie par tes propres fichiers sur GitHub. Je n'ai aucune limite d'API externe et je n'obéis qu'à tes règles."
+    "titre": "Écoute active et empathie dans la conversation",
+    "mots_cles": ["écoute", "empathie", "discussion", "communication"],
+    "contenu": "Une bonne conversation ne repose pas seulement sur l'art de parler, mais surtout sur l'art d'écouter. L'écoute active consiste à prêter attention à son interlocuteur sans l'interrompre, à observer ses nuances et à reformuler ses propos pour valider sa compréhension. L'empathie permet de se mettre à la place de l'autre, favorisant ainsi un climat de confiance mutuelle et de respect."
   },
   {
-    "titre": "Création d'une application web mobile (PWA)",
-    "mots_cles": ["application", "créer application", "pwa", "site web", "mobile", "html"],
-    "contenu": "🚀 **Exécution : Construction d'une application PWA**\n\nVoici la structure complète que j'ai générée et exécutée pour ton application :\n\n```html\n<!DOCTYPE html>\n<html lang='fr'>\n<head>\n<meta charset='UTF-8'>\n<meta name='viewport' content='width=device-width, initial-scale=1.0'>\n<title>Mon App</title>\n<style>\n  body { background: #04030f; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }\n  h1 { color: #38bdf8; }\n</style>\n</head>\n<body>\n  <h1>Application Active</h1>\n  <p>Générée et exécutée avec succès par MNL IA.</p>\n</body>\n</html>\n```"
+    "titre": "Formules de politesse et respect au quotidien",
+    "mots_cles": ["politesse", "savoir-vivre", "respect", "valeurs"],
+    "contenu": "L'utilisation régulière des mots magiques de la politesse ('s'il vous plaît', 'merci', 'pardon', 'de rien') est la base indispensable du vivre-ensemble. Ces expressions désarment les tensions, témoignent de la gratitude et valorisent la personne en face de soi. Le respect des règles élémentaires de courtoisie s'applique en tout lieu et en tout temps."
   },
   {
-    "titre": "Résolution des équations du second degré (Maths)",
-    "mots_cles": ["maths", "mathématiques", "équation", "delta", "second degré", "calcul"],
-    "contenu": "📐 **Exécution Mathématique (Second Degré)**\n\nPour résoudre $ax^2 + bx + c = 0$ :\n1. Calcule le discriminant : $\\Delta = b^2 - 4ac$\n2. Si $\\Delta > 0$, deux solutions : $x_1 = \\frac{-b - \\sqrt{\\Delta}}{2a}$ et $x_2 = \\frac{-b + \\sqrt{\\Delta}}{2a}$.\n3. Si $\\Delta = 0$, solution unique : $x = \\frac{-b}{2a}$.\n4. Si $\\Delta < 0$, pas de solution réelle."
+    "titre": "Gérer les désaccords avec diplomatie",
+    "mots_cles": ["diplomatie", "gestion des conflits", "courtoisie", "débat"],
+    "contenu": "Il est tout à fait normal d'avoir des avis divergents. Cependant, la manière de les exprimer fait toute la différence. Plutôt que d'attaquer la personne, il convient de critiquer l'idée avec calme et arguments construits. Utiliser des tournures mesurées ('Je comprends ton point de vue, de mon côté je vois les choses ainsi...') permet d'éviter les confrontations inutiles."
   },
   {
-    "titre": "Environnement Termux et Python",
-    "mots_cles": ["termux", "android", "script", "python", "git", "commande"],
-    "contenu": "💻 **Exécution des commandes Termux / Python**\n\n- Pour mettre à jour : `pkg update && pkg upgrade -y`\n- Pour installer Python et Git : `pkg install python git -y`\n- Pour lancer un script : `python nom_du_script.py`\n- Pour synchroniser sur GitHub :\n  `git add .`\n  `git commit -m 'Mise à jour'`\n  `git push origin main`"
+    "titre": "L'art de la conversation fluide et bienveillante",
+    "mots_cles": ["conversation", "aisance", "échanges", "sociabilité"],
+    "contenu": "Pour qu'une discussion soit agréable, il est conseillé de poser des questions ouvertes qui invitent l'autre à s'exprimer (par exemple : 'Qu'en penses-tu ?' ou 'Comment as-tu vécu cette expérience ?'). Il faut également veiller à ne pas monopoliser la parole et à s'intéresser sincèrement aux passions et aux centres d'intérêt de son interlocuteur."
   },
   {
-    "titre": "Gestion des erreurs et absence de données",
-    "mots_cles": ["aide", "comment", "faire", "inconnu", "besoin"],
-    "contenu": "⚙️ Je n'ai pas encore cette information spécifique dans ma base. Pour que je puisse l'exécuter, ajoute simplement un nouvel objet JSON dans ton fichier `database.json` sur GitHub avec tes mots-clés et tes instructions détaillées !"
+    "titre": "La maîtrise du ton et de la voix en public",
+    "mots_cles": ["voix", "ton", "assurance", "expression orale"],
+    "contenu": "Le ton de la voix véhicule autant d'émotions que les mots eux-mêmes. Parler d'une voix calme, posée et audible témoigne de la maîtrise de soi et inspire confiance. Éviter de crier ou de montrer de l'impatience permet de maintenir un climat serein, même lors de discussions complexes."
+  },
+  {
+    "titre": "La ponctualité comme marque de respect",
+    "mots_cles": ["ponctualité", "temps", "respect", "organisation"],
+    "contenu": "Arriver à l'heure convenue, que ce soit pour un rendez-vous formel ou une rencontre informelle, démontre le respect que l'on accorde au temps des autres. En cas d'imprévu ou de retard inevitable, prévenir le plus tôt possible est une règle absolue de savoir-vivre."
+  },
+  {
+    "titre": "Savoir présenter ses excuses sincèrement",
+    "mots_cles": ["excuses", "humilité", "réparation", "relations"],
+    "contenu": "Reconnaître ses torts n'est pas un signe de faiblesse, mais de grande maturité. Des excuses sincères comportent trois éléments clés : identifier clairement l'erreur commise, exprimer des remords authentiques, et proposer une solution ou un engagement pour que cela ne se reproduise plus."
+  },
+  {
+    "titre": "L'importance de la discrétion et de la confidentialité",
+    "mots_cles": ["discrétion", "confidentialité", "confiance", "secret"],
+    "contenu": "Respecter la vie privée d'autrui et garder pour soi les informations personnelles ou sensibles qui nous sont confiées est le socle de la confiance relationnelle. Une personne discrète et digne de confiance est toujours hautement estimée dans son entourage."
+  },
+  {
+    "titre": "Encourager et valoriser les autres",
+    "mots_cles": ["encouragement", "positivisme", "soutien", "valorisation"],
+    "contenu": "Savoir complimenter sincèrement le travail, les efforts ou les réussites d'une personne renforce les liens sociaux et stimule la motivation d'autrui. La générosité dans les compliments crée une atmosphère constructive et agréable autour de soi."
   }
 ]
-  ,{
-    "titre": "Gestion des listes et tableaux en JavaScript",
-    "mots_cles": ["tableau", "liste", "javascript", "array", "map", "filter"],
-    "contenu": "💻 **Exécution : Manipulation de tableaux JavaScript**\n\n```javascript\n// Filtrer et afficher des éléments\nconst elements = ['HTML', 'CSS', 'JavaScript', 'Python'];\nconst resultats = elements.filter(item => item.includes('Script'));\nconsole.log(resultats);\n```"
-  },
-  {
-    "titre": "Commandes Git Essentielles",
-    "mots_cles": ["git", "github", "commit", "push", "pull", "clone"],
-    "contenu": "🛠️ **Exécution : Commandes Git pour ton dépôt**\n\n- Voir l'état : `git status`\n- Valider les modifications : `git commit -m 'Ton message'`\n- Envoyer sur GitHub : `git push origin main`"
-  }
-,{
-  "sujet": "Comment répondre et poser la question 'Comment ça va ?'",
-  "reponse_a_la_question": {
- "description": "Pour répondre à cette question, adaptez votre réponse selon votre interlocuteur et votre état d'esprit.",
- "options": [
- {
- "contexte": "Formel ou poli",
- "reponse": "Ça va très bien, merci. Et vous ?"
- },
- {
- "contexte": "Informel ou amical",
- "reponse": "Ça va super, et toi ?"
- },
- {
- "contexte": "Neutre",
- "reponse": "Ça va, merci."
- }
- ]
-  },
-  "poser_la_question": {
- "description": "Il existe plusieurs manières de demander des nouvelles selon le niveau de langue.",
- "variantes": [
- "Comment allez-vous ? (Formel)",
- "Comment ça va ? (Courant)",
- "Ça va ? (Informel)",
- "Quoi de neuf ? (Très informel)"
- ]
-  },
-  "conseil": "Il est d'usage de toujours renvoyer la question à son interlocuteur après avoir répondu pour maintenir une interaction fluide."
-}
