@@ -1,166 +1,120 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#101827">
-  <meta name="description" content="CircuitPlay, laboratoire interactif de logique numérique pour les élèves.">
-  <title>CircuitPlay | Laboratoire logique</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MNL IA</title>
+<meta name="description" content="MNL IA — un assistant intelligent, élégant et puissant.">
+<meta name="theme-color" content="#07041a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MNL IA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#" aria-label="CircuitPlay, accueil">
-      <span class="brand-icon">ϟ</span>
-      <span>Circuit<span class="brand-accent">Play</span></span>
-    </a>
-    <span class="status"><span class="status-dot"></span> LABORATOIRE ACTIF</span>
+
+<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <div class="orb mini" id="logoOrb"></div>
+      <div>
+        <h1>MNL <b>IA</b></h1>
+        <p id="status">Prête à t'aider</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="ib" id="btnInstall" title="Installer l'application" hidden>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
+      </button>
+      <button class="ib" id="btnNew" title="Nouvelle discussion">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="ib" id="btnSettings" title="Réglages">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
   </header>
 
-  <main class="container">
-    <section class="hero">
-      <span class="eyebrow">LABORATOIRE DE LOGIQUE NUMÉRIQUE</span>
-      <h1>Comprendre les circuits.<br><span>Penser comme un ordinateur.</span></h1>
-      <p>Modifie les entrées, choisis une porte logique et observe comment le signal se transforme.</p>
-    </section>
-
-    <section class="panel" aria-labelledby="sim-title">
-      <div class="section-heading">
-        <div>
-          <span class="eyebrow">01 / SIMULATION</span>
-          <h2 id="sim-title">Construis ton circuit</h2>
-        </div>
-        <button id="resetBtn" class="button button-secondary" type="button">
-          ↺ Réinitialiser
-        </button>
-      </div>
-
-      <label class="field-label" for="gateSelect">Porte logique</label>
-      <select id="gateSelect">
-        <option value="AND">ET (AND)</option>
-        <option value="OR">OU (OR)</option>
-        <option value="NOT">NON (NOT)</option>
-      </select>
-
-      <p id="gateDescription" class="description" aria-live="polite">
-        La sortie vaut 1 seulement si A et B valent 1.
-      </p>
-
-      <div class="circuit">
-        <div class="input-column">
-          <span class="mini-label">ENTRÉES</span>
-
-          <div class="input-card">
-            <span class="signal-name">A</span>
-            <button id="inputA" class="toggle" type="button"
-              role="switch" aria-checked="false" aria-label="Entrée A">
-              <span class="toggle-knob"></span>
-            </button>
-            <span id="valueA" class="bit">0</span>
-          </div>
-
-          <div class="input-card" id="inputBCard">
-            <span class="signal-name">B</span>
-            <button id="inputB" class="toggle" type="button"
-              role="switch" aria-checked="false" aria-label="Entrée B">
-              <span class="toggle-knob"></span>
-            </button>
-            <span id="valueB" class="bit">0</span>
-          </div>
-        </div>
-
-        <div class="gate-column">
-          <span class="mini-label">PORTE</span>
-          <div id="gateVisual" class="gate-visual">
-            <svg viewBox="0 0 120 90" role="img" aria-label="Symbole de la porte logique">
-              <path id="gateShape" d="M25 12 H50 A33 33 0 0 1 50 78 H25 Z"
-                fill="#1d3555" stroke="#60a5fa" stroke-width="3"/>
-              <text id="gateSymbol" x="48" y="52" text-anchor="middle"
-                fill="#ffffff" font-size="16" font-weight="bold">ET</text>
-            </svg>
-          </div>
-          <span id="gateName" class="gate-name">AND</span>
-        </div>
-
-        <div class="output-column">
-          <span class="mini-label">SORTIE</span>
-          <div id="outputLamp" class="lamp" role="img" aria-label="Sortie éteinte">
-            <span></span>
-          </div>
-          <span id="outputValue" class="output-value">0 · FAUX</span>
-        </div>
-      </div>
-
-      <div class="result-box" aria-live="polite">
-        <span class="result-icon" id="resultIcon">○</span>
-        <div>
-          <strong id="resultTitle">Sortie désactivée</strong>
-          <p id="resultExplanation">La sortie vaut 0.</p>
-        </div>
-      </div>
-
-      <div class="formula-box">
-        <span class="mini-label">EXPRESSION LOGIQUE</span>
-        <code id="formula">S = A ET B</code>
+  <main id="chat" aria-live="polite">
+    <section id="welcome">
+      <div class="orb big"></div>
+      <h2 id="greet">Bonjour</h2>
+      <p>Je suis <b class="grad">MNL IA</b>. Pose-moi une question, demande-moi une idée, un texte, du code… je suis là.</p>
+      <div class="chips">
+        <button class="chip" data-q="Raconte-moi une belle histoire courte qui inspire.">✨ Une histoire inspirante</button>
+        <button class="chip" data-q="Donne-moi 5 idées de business rentables à lancer avec peu d'argent.">💡 Idées de business</button>
+        <button class="chip" data-q="Explique-moi l'intelligence artificielle simplement, avec des exemples.">🧠 L'IA expliquée</button>
+        <button class="chip" data-q="Aide-moi à créer une page web simple et jolie en HTML et CSS.">💻 Aide pour coder</button>
       </div>
     </section>
-
-    <section class="panel" aria-labelledby="truth-title">
-      <div class="section-heading">
-        <div>
-          <span class="eyebrow">02 / SCIENCE</span>
-          <h2 id="truth-title">Table de vérité</h2>
-        </div>
-      </div>
-      <p class="description">Toutes les combinaisons possibles des entrées et leurs résultats.</p>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>A</th>
-              <th id="headerB">B</th>
-              <th>Sortie S</th>
-            </tr>
-          </thead>
-          <tbody id="truthBody"></tbody>
-        </table>
-      </div>
-      <p class="small-note">La ligne active correspond aux valeurs choisies dans la simulation.</p>
-    </section>
-
-    <section class="panel" aria-labelledby="challenge-title">
-      <div class="section-heading">
-        <div>
-          <span class="eyebrow">03 / ENTRAÎNEMENT</span>
-          <h2 id="challenge-title">Défi logique</h2>
-        </div>
-        <span id="challengeCount" class="counter">Question 1</span>
-      </div>
-
-      <p id="challengeQuestion" class="challenge-question">
-        Avec la porte ET, quelle est la sortie si A = 1 et B = 1 ?
-      </p>
-
-      <div id="answerChoices" class="answer-grid">
-        <button class="answer-button" type="button" data-answer="0">0 — Faux</button>
-        <button class="answer-button" type="button" data-answer="1">1 — Vrai</button>
-      </div>
-
-      <p id="challengeFeedback" class="feedback" aria-live="polite">
-        Choisis une réponse pour vérifier ta compréhension.
-      </p>
-      <button id="nextChallenge" class="button button-primary" type="button">
-        Question suivante →
-      </button>
-      <p id="score" class="small-note">Score : 0 / 0</p>
-    </section>
-
-    <footer>
-      <p><strong>CircuitPlay</strong> — Un projet de la startup scientifique scolaire.</p>
-      <p>Conçu pour apprendre, expérimenter et innover. Fonctionne sans compte.</p>
-    </footer>
   </main>
+
+  <footer class="composer">
+    <div id="preview"></div>
+    <div class="bar">
+      <button class="ib" id="btnAttach" title="Joindre une image">
+        <svg viewBox="0 0 24 24"><path d="M21 12.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9-9a3.7 3.7 0 0 1 5.2 5.2l-9 9a1.8 1.8 0 0 1-2.6-2.6l8.4-8.4"/></svg>
+      </button>
+      <input type="file" id="file" accept="image/*" hidden>
+      <textarea id="input" rows="1" placeholder="Demande n'importe quoi à MNL IA…" enterkeyhint="send"></textarea>
+      <button class="ib" id="btnMic" title="Dicter">
+        <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <button class="ib send" id="btnSend" title="Envoyer">
+        <svg viewBox="0 0 24 24" id="icoSend"><path d="M5 12l14-7-5 14-2.5-5.5z"/></svg>
+        <svg viewBox="0 0 24 24" id="icoStop" hidden><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+      </button>
+    </div>
+    <p class="hint">MNL IA peut se tromper. Vérifie les infos importantes.</p>
+  </footer>
+</div>
+
+<dialog id="settings">
+  <form method="dialog" id="settingsForm">
+    <h3>Réglages</h3>
+
+    <label>Clé API Gemini
+      <input type="password" id="setKey" placeholder="Colle ta clé ici" autocomplete="off" spellcheck="false">
+      <small>Stockée uniquement sur cet appareil. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Obtenir une clé</a></small>
+    </label>
+
+    <label>Modèle
+      <input type="text" id="setModel" list="models" autocomplete="off" spellcheck="false">
+      <datalist id="models">
+        <option value="gemini-2.5-flash">
+        <option value="gemini-2.5-pro">
+        <option value="gemini-2.5-flash-lite">
+      </datalist>
+    </label>
+
+    <label>Personnalité (optionnel)
+      <textarea id="setPersona" rows="3" placeholder="Ex : Réponds toujours en lingala et en français, avec humour."></textarea>
+    </label>
+
+    <label class="row">
+      <input type="checkbox" id="setSpeak">
+      <span>Lire les réponses à voix haute</span>
+    </label>
+
+    <p class="tip">📱 iPhone : Partager → « Sur l'écran d'accueil ». Android : menu ⋮ → « Installer l'application ».</p>
+
+    <div class="btns">
+      <button type="button" class="danger" id="btnWipe">Effacer l'historique</button>
+      <span class="grow"></span>
+      <button type="button" class="ghost" id="btnCancel">Annuler</button>
+      <button type="submit" class="primary" id="btnSave" value="save">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script src="app.js"></script>
 </body>
 </html>
