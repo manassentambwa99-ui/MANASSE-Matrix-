@@ -529,3 +529,20 @@
     "contenu": "Le biais des coûts irrécupérables pousse à poursuivre un projet voué à l'échec uniquement en raison du temps ou de l'argent déjà investis. Un raisonnement rationnel impose d'évaluer une décision uniquement au regard des coûts et bénéfices futurs, sans laisser les ressources passées compromettre l'avenir."
   }
 ]
+  ,
+  {
+    "titre": "L'architecture de l'accueil conversationnel et de la reconnaissance d'intention",
+    "mots_cles": ["bonjour", "bonsoir", "salut", "accueil", "intention", "conversation"],
+    "contenu": "Face à une salutation ou à un mot de liaison (comme bonjour, bonsoir, salut, mais), le système doit identifier l'intention relationnelle ou de transition de l'utilisateur. Plutôt que de rejeter l'entrée, l'intelligence doit accuser réception avec courtoisie, valider le contexte en cours et inviter l'interlocuteur à préciser sa requête stratégique ou technique."
+  },
+  {
+    "titre": "La gestion des tournures discursives de transition et des objections partielles",
+    "mots_cles": ["mais", "objection", "transition", "analyse", "discours"],
+    "contenu": "L'utilisation du terme 'mais' signale une réserve, une objection potentielle ou une nuance à apporter par l'utilisateur. Le système doit interpréter ce signal non pas comme une erreur, mais comme une invitation à nuancer l'analyse précédente, à écouter l'argument contradictoire et à ajuster la réponse en conséquence avec flexibilité."
+  },
+  {
+    "titre": "L'optimisation des réponses contextuelles et de la clarté interactive",
+    "mots_cles": ["interaction", "clarté", "réponse", "contexte", "interface"],
+    "contenu": "Une interface conversationnelle souveraine doit maintenir un équilibre entre concision et pertinence. Chaque retour textuel doit guider l'utilisateur vers l'étape suivante sans alourdir l'échange, en s'appuyant sur les données structurées de la base locale pour formuler des réponses précises et adaptées au format mobile."
+  }
+]
