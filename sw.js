@@ -1,5 +1,5 @@
 /* Service worker de MNL IA — l'interface fonctionne hors-ligne */
-const VERSION = 'mnl-ia-v2';
+const VERSION = 'mnl-ia-v3';
 const SHELL = [
   './',
   'index.html',
