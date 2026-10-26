@@ -30,3 +30,13 @@
     "contenu": "⚙️ Je n'ai pas encore cette information spécifique dans ma base. Pour que je puisse l'exécuter, ajoute simplement un nouvel objet JSON dans ton fichier `database.json` sur GitHub avec tes mots-clés et tes instructions détaillées !"
   }
 ]
+  ,{
+    "titre": "Gestion des listes et tableaux en JavaScript",
+    "mots_cles": ["tableau", "liste", "javascript", "array", "map", "filter"],
+    "contenu": "💻 **Exécution : Manipulation de tableaux JavaScript**\n\n```javascript\n// Filtrer et afficher des éléments\nconst elements = ['HTML', 'CSS', 'JavaScript', 'Python'];\nconst resultats = elements.filter(item => item.includes('Script'));\nconsole.log(resultats);\n```"
+  },
+  {
+    "titre": "Commandes Git Essentielles",
+    "mots_cles": ["git", "github", "commit", "push", "pull", "clone"],
+    "contenu": "🛠️ **Exécution : Commandes Git pour ton dépôt**\n\n- Voir l'état : `git status`\n- Valider les modifications : `git commit -m 'Ton message'`\n- Envoyer sur GitHub : `git push origin main`"
+  }
