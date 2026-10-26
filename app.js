@@ -6,8 +6,9 @@
   const btnAct = $('#btnAct'), btnAttach = $('#btnAttach');
   const fileInput = $('#file'), preview = $('#preview'), dlg = $('#settings');
 
-  const API = 'https://generativelanguage.googleapis.com/v1beta';
-  const FALLBACKS = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  // Point d'accès officiel Groq (compatible OpenAI format)
+  const API = 'https://api.groq.com/openai/v1/chat/completions';
+  
   const ACCENTS = {
     violet: { a: [139, 92, 246], b: [34, 211, 238] },
     cyan:   { a: [34, 211, 238], b: [59, 130, 246] },
@@ -23,11 +24,9 @@
   };
 
   let settings = Object.assign(
-    { apiKey: '', model: 'auto', resolved: '', models: [], name: '', accent: 'violet', speak: false, persona: '' },
+    { apiKey: '', model: 'llama-3.3-70b-versatile', name: '', accent: 'violet', speak: false, persona: '', customKnowledge: '' },
     store.get('mnl_settings', {})
   );
-  if (!settings.model) settings.model = 'auto';
-  if (!Array.isArray(settings.models)) settings.models = [];
   const saveSettings = () => store.set('mnl_settings', settings);
 
   let history = store.get('mnl_history', []);
@@ -37,6 +36,7 @@
   let controller = null;
   let busy = false, listening = false, speaking = false;
 
+  // Orbe holographique
   const orb = (() => {
     const cv = $('#orb'), ctx = cv.getContext('2d');
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -189,34 +189,60 @@
     scrollDown();
   }
 
-  async function streamOnce(model, contents, signal, onText) {
-    const res = await fetch(API + '/models/' + encodeURIComponent(model) + ':streamGenerateContent?alt=sse', {
+  function systemPrompt() {
+    let prompt = "Tu es MNL IA, un assistant personnel intelligent et souverain. " +
+      (settings.name ? "L'utilisateur s'appelle " + settings.name + ". " : "") +
+      (settings.persona ? "Personnalité : " + settings.persona + " " : "");
+    
+    if (settings.customKnowledge) {
+      prompt += "\n\n[BASE DE CONNAISSANCES PERSONNALISÉE DE L'UTILISATEUR] :\n" + settings.customKnowledge;
+    }
+    return prompt;
+  }
+
+  // Requête vers l'API Groq en streaming
+  async function callGroq(messages, signal, onText) {
+    const res = await fetch(API, {
       method: 'POST',
       signal,
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': settings.apiKey },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + settings.apiKey
+      },
       body: JSON.stringify({
-        contents,
-        generationConfig: { temperature: 0.7 }
+        model: settings.model || 'llama-3.3-70b-versatile',
+        messages: messages,
+        temperature: 0.7,
+        stream: true
       })
     });
-    if (!res.ok) throw new Error('Erreur HTTP ' + res.status);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'Erreur HTTP ' + res.status);
+    }
+
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = '', full = '';
+
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
       buf += dec.decode(value, { stream: true });
       const lines = buf.split('\n');
       buf = lines.pop();
+
       for (const line of lines) {
         if (!line.startsWith('data:')) continue;
         const payload = line.slice(5).trim();
-        if (!payload) continue;
+        if (payload === '[DONE]') break;
         try {
           const j = JSON.parse(payload);
-          for (const p of j.candidates?.[0]?.content?.parts || []) {
-            if (p.text) { full += p.text; onText(full); }
+          const token = j.choices?.[0]?.delta?.content;
+          if (token) {
+            full += token;
+            onText(full);
           }
         } catch {}
       }
@@ -224,28 +250,17 @@
     return full;
   }
 
-  async function generate(contents, signal, onText) {
-    const queue = [settings.model !== 'auto' ? settings.model : 'gemini-2.5-flash', ...FALLBACKS];
-    for (const model of queue) {
-      try {
-        return await streamOnce(model, contents, signal, onText);
-      } catch (e) {
-        if (model === queue[queue.length - 1]) throw e;
-      }
-    }
-  }
-
   async function send(raw) {
     const text = (raw || '').trim();
     if (!text || busy) return;
     if (!settings.apiKey) {
-      toast('Ajoute ta clé Gemini dans les réglages');
+      toast('Ajoute ta clé API Groq dans les réglages');
       openSettings();
       return;
     }
     input.value = '';
 
-    history.push({ role: 'user', text });
+    history.push({ role: 'user', content: text });
     addMsg('user', text);
     const bot = addMsg('model', '', { typing: true });
     busy = true;
@@ -254,15 +269,25 @@
     let partial = '';
 
     try {
-      const contents = history.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
-      const full = await generate(contents, controller.signal, (t) => { partial = t; bot.set(t); scrollDown(); });
-      history.push({ role: 'model', text: full });
+      // Préparation des messages avec le prompt système au début
+      const apiMessages = [
+        { role: 'system', content: systemPrompt() },
+        ...history.map(m => ({ role: m.role, content: m.content }))
+      ];
+
+      const full = await callGroq(apiMessages, controller.signal, (t) => {
+        partial = t;
+        bot.set(t);
+        scrollDown();
+      });
+
+      history.push({ role: 'assistant', content: full });
       persist();
       bot.done(full);
     } catch (e) {
       history.pop();
       bot.el.remove();
-      addMsg('model', 'Erreur : Vérifie ta clé API ou ta connexion.', { error: true });
+      addMsg('model', 'Erreur Groq : ' + (e.message || 'Vérifie ta clé API.'), { error: true });
     } finally {
       controller = null;
       busy = false;
@@ -296,7 +321,9 @@
   function openSettings() {
     $('#setName').value = settings.name;
     $('#setKey').value = settings.apiKey;
+    $('#setModel').value = settings.model;
     $('#setPersona').value = settings.persona;
+    $('#setCustomKnowledge').value = settings.customKnowledge || '';
     $('#setSpeak').checked = settings.speak;
     if (!dlg.open) dlg.showModal();
   }
@@ -304,12 +331,14 @@
   $('#btnSettings').addEventListener('click', openSettings);
   $('#btnCancel').addEventListener('click', () => dlg.close());
   $('#settingsForm').addEventListener('submit', () => {
-    settings.apiKey = $('#setKey').value.trim();
-    settings.name = $('#setName').value.trim();
-    settings.persona = $('#setPersona').value.trim();
-    settings.speak = $('#setSpeak').checked;
+    settings.apiKey = $('#setKey'].value.trim();
+    settings.model = $('#setModel').value;
+    settings.name = $('#setName'].value.trim();
+    settings.persona = $('#setPersona'].value.trim();
+    settings.customKnowledge = $('#setCustomKnowledge').value.trim();
+    settings.speak = $('#setSpeak'].checked;
     saveSettings();
-    toast('Enregistré ✓');
+    toast('Réglages & Mémoire enregistrés ✓');
   });
 
   applyAccent(settings.accent);
