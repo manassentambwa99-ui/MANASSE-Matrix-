@@ -6,9 +6,15 @@
   const btnAct = $('#btnAct'), btnAttach = $('#btnAttach');
   const fileInput = $('#file'), preview = $('#preview'), dlg = $('#settings');
 
-  // Point d'accès officiel Groq (compatible OpenAI format)
   const API = 'https://api.groq.com/openai/v1/chat/completions';
   
+  // Liste des modèles en cascade (si le premier sature, il bascule sur le suivant)
+  const FALLBACK_MODELS = [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'mixtral-8x7b-32768'
+  ];
+
   const ACCENTS = {
     violet: { a: [139, 92, 246], b: [34, 211, 238] },
     cyan:   { a: [34, 211, 238], b: [59, 130, 246] },
@@ -32,7 +38,6 @@
   let history = store.get('mnl_history', []);
   const persist = () => store.set('mnl_history', history.slice(-100));
 
-  let pendingImage = null;
   let controller = null;
   let busy = false, listening = false, speaking = false;
 
@@ -156,10 +161,7 @@
   }
 
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  function md(src) {
-    return esc(src).replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-  }
+  const md = (src) => esc(src).replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 
   const scrollDown = () => { chat.scrollTop = chat.scrollHeight; };
   const updateStage = () => stage.classList.toggle('small', chat.querySelector('.msg') !== null);
@@ -190,64 +192,76 @@
   }
 
   function systemPrompt() {
-    let prompt = "Tu es MNL IA, un assistant personnel intelligent et souverain. " +
+    let prompt = "Tu es MNL IA, un assistant personnel intelligent, souverain et ultra-rapide. " +
       (settings.name ? "L'utilisateur s'appelle " + settings.name + ". " : "") +
       (settings.persona ? "Personnalité : " + settings.persona + " " : "");
     
     if (settings.customKnowledge) {
-      prompt += "\n\n[BASE DE CONNAISSANCES PERSONNALISÉE DE L'UTILISATEUR] :\n" + settings.customKnowledge;
+      prompt += "\n\n[INSTRUCTIONS CRITIQUES ET BASE DE DONNÉES PRIVÉE DE L'UTILISATEUR] :\n" +
+                "Utilise en priorité absolue les informations ci-dessous pour répondre aux questions, même si le modèle public hésite ou n'a pas l'information :\n" + 
+                settings.customKnowledge;
     }
     return prompt;
   }
 
-  // Requête vers l'API Groq en streaming
-  async function callGroq(messages, signal, onText) {
-    const res = await fetch(API, {
-      method: 'POST',
-      signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + settings.apiKey
-      },
-      body: JSON.stringify({
-        model: settings.model || 'llama-3.3-70b-versatile',
-        messages: messages,
-        temperature: 0.7,
-        stream: true
-      })
-    });
+  // Fonction de requête avec bascule automatique entre les modèles Groq
+  async function streamWithFallback(messages, signal, onText) {
+    const modelsToTry = [settings.model, ...FALLBACK_MODELS.filter(m => m !== settings.model)];
+    
+    let lastError = null;
+    for (const currentModel of modelsToTry) {
+      try {
+        const res = await fetch(API, {
+          method: 'POST',
+          signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + settings.apiKey
+          },
+          body: JSON.stringify({
+            model: currentModel,
+            messages: messages,
+            temperature: 0.7,
+            stream: true
+          })
+        });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'Erreur HTTP ' + res.status);
-    }
+        if (!res.ok) {
+          throw new Error('Erreur HTTP ' + res.status);
+        }
 
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '', full = '';
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '', full = '';
 
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop();
 
-      for (const line of lines) {
-        if (!line.startsWith('data:')) continue;
-        const payload = line.slice(5).trim();
-        if (payload === '[DONE]') break;
-        try {
-          const j = JSON.parse(payload);
-          const token = j.choices?.[0]?.delta?.content;
-          if (token) {
-            full += token;
-            onText(full);
+            for (const line of lines) {
+            if (!line.startsWith('data:')) continue;
+            const payload = line.slice(5).trim();
+            if (payload === '[DONE]') break;
+            try {
+              const j = JSON.parse(payload);
+              const token = j.choices?.[0]?.delta?.content;
+              if (token) {
+                full += token;
+                onText(full);
+              }
+            } catch {}
           }
-        } catch {}
+        }
+        return full; // Succès, on renvoie la réponse
+      } catch (e) {
+        lastError = e;
+        // On essaie le modèle suivant de la liste
       }
     }
-    return full;
+    throw lastError || new Error("Tous les modèles Groq sont momentanément indisponibles.");
   }
 
   async function send(raw) {
@@ -269,13 +283,12 @@
     let partial = '';
 
     try {
-      // Préparation des messages avec le prompt système au début
       const apiMessages = [
         { role: 'system', content: systemPrompt() },
         ...history.map(m => ({ role: m.role, content: m.content }))
       ];
 
-      const full = await callGroq(apiMessages, controller.signal, (t) => {
+      const full = await streamWithFallback(apiMessages, controller.signal, (t) => {
         partial = t;
         bot.set(t);
         scrollDown();
@@ -287,7 +300,12 @@
     } catch (e) {
       history.pop();
       bot.el.remove();
-      addMsg('model', 'Erreur Groq : ' + (e.message || 'Vérifie ta clé API.'), { error: true });
+      // Si l'IA échoue complètement, on vérifie si l'utilisateur a mis des infos dans sa base perso
+      if (settings.customKnowledge) {
+        addMsg('model', "⚠️ Réseau ralenti, mais voici ce que j'ai trouvé dans tes données personnelles enregistrées :\n\n" + settings.customKnowledge, { error: false });
+      } else {
+        addMsg('model', 'Erreur : ' + (e.message || 'Vérifie ta clé API Groq.'), { error: true });
+      }
     } finally {
       controller = null;
       busy = false;
@@ -331,10 +349,10 @@
   $('#btnSettings').addEventListener('click', openSettings);
   $('#btnCancel').addEventListener('click', () => dlg.close());
   $('#settingsForm').addEventListener('submit', () => {
-    settings.apiKey = $('#setKey'].value.trim();
+    settings.apiKey = $('#setKey').value.trim();
     settings.model = $('#setModel').value;
-    settings.name = $('#setName'].value.trim();
-    settings.persona = $('#setPersona'].value.trim();
+    settings.name = $('#setName').value.trim();
+    settings.persona = $('#setPersona').value.trim();
     settings.customKnowledge = $('#setCustomKnowledge').value.trim();
     settings.speak = $('#setSpeak'].checked;
     saveSettings();
