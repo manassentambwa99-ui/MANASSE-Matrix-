@@ -40,3 +40,33 @@
     "mots_cles": ["git", "github", "commit", "push", "pull", "clone"],
     "contenu": "🛠️ **Exécution : Commandes Git pour ton dépôt**\n\n- Voir l'état : `git status`\n- Valider les modifications : `git commit -m 'Ton message'`\n- Envoyer sur GitHub : `git push origin main`"
   }
+,{
+  "sujet": "Comment répondre et poser la question 'Comment ça va ?'",
+  "reponse_a_la_question": {
+ "description": "Pour répondre à cette question, adaptez votre réponse selon votre interlocuteur et votre état d'esprit.",
+ "options": [
+ {
+ "contexte": "Formel ou poli",
+ "reponse": "Ça va très bien, merci. Et vous ?"
+ },
+ {
+ "contexte": "Informel ou amical",
+ "reponse": "Ça va super, et toi ?"
+ },
+ {
+ "contexte": "Neutre",
+ "reponse": "Ça va, merci."
+ }
+ ]
+  },
+  "poser_la_question": {
+ "description": "Il existe plusieurs manières de demander des nouvelles selon le niveau de langue.",
+ "variantes": [
+ "Comment allez-vous ? (Formel)",
+ "Comment ça va ? (Courant)",
+ "Ça va ? (Informel)",
+ "Quoi de neuf ? (Très informel)"
+ ]
+  },
+  "conseil": "Il est d'usage de toujours renvoyer la question à son interlocuteur après avoir répondu pour maintenir une interaction fluide."
+}
