@@ -3,7 +3,8 @@
 
   const $ = (s) => document.querySelector(s);
   const app = $('#app'), stage = $('#stage'), chat = $('#chat'), input = $('#input');
-  const btnAct = $('#btnAct'), dlg = $('#settings');
+  const btnAct = $('#btnAct'), btnAttach = $('#btnAttach');
+  const fileInput = $('#file'), preview = $('#preview'), dlg = $('#settings');
 
   const API = 'https://api.groq.com/openai/v1/chat/completions';
   const FALLBACK_MODELS = ['gpt-oss-120b', 'gpt-oss-20b', 'llama-3.3-70b-versatile'];
@@ -31,12 +32,15 @@
   let history = store.get('mnl_history', []);
   const persist = () => store.set('mnl_history', history.slice(-100));
 
+  let pendingImage = null;
   let controller = null;
   let busy = false, listening = false, speaking = false;
 
-  // Orbe holographique d'origine intact
+  /* ================= Orbe holographique ================= */
   const orb = (() => {
-    const cv = $('#orb'), ctx = cv.getContext('2d');
+    const cv = $('#orb');
+    if (!cv) return { setState(){}, setColors(){} };
+    const ctx = cv.getContext('2d');
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const N = 240, pts = [];
     for (let i = 0; i < N; i++) {
@@ -147,6 +151,7 @@
   let toastTimer;
   function toast(msg) {
     const t = $('#toast');
+    if (!t) return;
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(toastTimer);
@@ -179,7 +184,7 @@
 
   function renderHistory() {
     chat.querySelectorAll('.msg').forEach(n => n.remove());
-    history.forEach(m => addMsg(m.role, m.text));
+    history.forEach(m => addMsg(m.role, m.content));
     updateStage();
     scrollDown();
   }
@@ -260,6 +265,7 @@
       return;
     }
     input.value = '';
+    input.style.height = 'auto';
 
     history.push({ role: 'user', content: text });
     addMsg('user', text);
@@ -322,20 +328,21 @@
     renderHistory();
   });
 
-  // Gestion des réglages (fenêtre native <dialog>)
+  /* ================= Réglages ================= */
   function openSettings() {
-    $('#setName').value = settings.name;
-    $('#setKey').value = settings.apiKey;
-    $('#setModel').value = settings.model;
-    $('#setPersona').value = settings.persona;
+    $('#setName').value = settings.name || '';
+    $('#setKey').value = settings.apiKey || '';
+    $('#setModel').value = settings.model || 'gpt-oss-120b';
+    $('#setPersona').value = settings.persona || '';
     $('#setCustomKnowledge').value = settings.customKnowledge || '';
-    $('#setSpeak').checked = settings.speak;
+    $('#setSpeak').checked = !!settings.speak;
     buildSwatches();
-    if (!dlg.open) dlg.showModal();
+    if (dlg && !dlg.open) dlg.showModal();
   }
 
   function buildSwatches() {
     const box = $('#swatches');
+    if (!box) return;
     box.innerHTML = '';
     Object.keys(ACCENTS).forEach((name) => {
       const c = ACCENTS[name];
