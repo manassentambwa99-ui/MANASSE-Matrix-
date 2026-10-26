@@ -1,5 +1,5 @@
-/* Service worker de MNL IA — fonctionne hors-ligne pour l'interface */
-const VERSION = 'mnl-ia-v1';
+/* Service worker de MNL IA — l'interface fonctionne hors-ligne */
+const VERSION = 'mnl-ia-v2';
 const SHELL = [
   './',
   'index.html',
@@ -26,7 +26,7 @@ self.addEventListener('activate', (e) => {
 });
 
 // Réseau d'abord (mises à jour immédiates), cache en secours hors-ligne.
-// Les appels à l'API Gemini (autre origine) ne sont jamais interceptés.
+// Les appels à l'API Gemini et aux polices (autres origines) ne sont jamais interceptés.
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
