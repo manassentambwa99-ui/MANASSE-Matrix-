@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MNL IA</title>
-<meta name="description" content="MNL IA — un assistant intelligent, élégant et puissant.">
-<meta name="theme-color" content="#07041a">
+<meta name="description" content="MNL IA — ton assistant personnel.">
+<meta name="theme-color" content="#04030f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -13,47 +13,40 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MNL IA">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+<div class="bg" aria-hidden="true"><i class="grid"></i><i class="glow"></i></div>
 
-<div id="app">
+<div id="app" data-state="idle">
   <header class="top">
-    <div class="brand">
-      <div class="orb mini" id="logoOrb"></div>
-      <div>
-        <h1>MNL <b>IA</b></h1>
-        <p id="status">Prête à t'aider</p>
-      </div>
-    </div>
+    <span class="word">MNL<em>IA</em></span>
     <div class="actions">
-      <button class="ib" id="btnInstall" title="Installer l'application" hidden>
-        <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
+      <button class="ib" id="btnInstall" title="Installer" hidden>
+        <svg viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg>
       </button>
-      <button class="ib" id="btnNew" title="Nouvelle discussion">
+      <button class="ib" id="btnNew" title="Nouvelle conversation">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <button class="ib" id="btnSettings" title="Réglages">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
       </button>
     </div>
   </header>
 
-  <main id="chat" aria-live="polite">
-    <section id="welcome">
-      <div class="orb big"></div>
+  <section id="stage">
+    <canvas id="orb" role="button" tabindex="0" aria-label="MNL IA : touche pour parler"></canvas>
+    <div id="hello">
       <h2 id="greet">Bonjour</h2>
-      <p>Je suis <b class="grad">MNL IA</b>. Pose-moi une question, demande-moi une idée, un texte, du code… je suis là.</p>
-      <div class="chips">
-        <button class="chip" data-q="Raconte-moi une belle histoire courte qui inspire.">✨ Une histoire inspirante</button>
-        <button class="chip" data-q="Donne-moi 5 idées de business rentables à lancer avec peu d'argent.">💡 Idées de business</button>
-        <button class="chip" data-q="Explique-moi l'intelligence artificielle simplement, avec des exemples.">🧠 L'IA expliquée</button>
-        <button class="chip" data-q="Aide-moi à créer une page web simple et jolie en HTML et CSS.">💻 Aide pour coder</button>
-      </div>
-    </section>
-  </main>
+      <p>Touche l'orbe pour parler</p>
+    </div>
+  </section>
+
+  <main id="chat" aria-live="polite"></main>
 
   <footer class="composer">
     <div id="preview"></div>
@@ -62,53 +55,46 @@
         <svg viewBox="0 0 24 24"><path d="M21 12.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9-9a3.7 3.7 0 0 1 5.2 5.2l-9 9a1.8 1.8 0 0 1-2.6-2.6l8.4-8.4"/></svg>
       </button>
       <input type="file" id="file" accept="image/*" hidden>
-      <textarea id="input" rows="1" placeholder="Demande n'importe quoi à MNL IA…" enterkeyhint="send"></textarea>
-      <button class="ib" id="btnMic" title="Dicter">
-        <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
-      </button>
-      <button class="ib send" id="btnSend" title="Envoyer">
-        <svg viewBox="0 0 24 24" id="icoSend"><path d="M5 12l14-7-5 14-2.5-5.5z"/></svg>
-        <svg viewBox="0 0 24 24" id="icoStop" hidden><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+      <textarea id="input" rows="1" placeholder="Écris ou parle…" enterkeyhint="send"></textarea>
+      <button class="ib act" id="btnAct" data-mode="mic" title="Envoyer / parler">
+        <svg viewBox="0 0 24 24" id="icoMic"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        <svg viewBox="0 0 24 24" id="icoSend" hidden><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <svg viewBox="0 0 24 24" id="icoStop" hidden><rect x="7" y="7" width="10" height="10" rx="2.5"/></svg>
       </button>
     </div>
-    <p class="hint">MNL IA peut se tromper. Vérifie les infos importantes.</p>
   </footer>
 </div>
 
 <dialog id="settings">
   <form method="dialog" id="settingsForm">
-    <h3>Réglages</h3>
+    <label>Prénom
+      <input type="text" id="setName" placeholder="Comment dois-je t'appeler ?" autocomplete="off">
+    </label>
 
-    <label>Clé API Gemini
+    <label>Clé Gemini
       <input type="password" id="setKey" placeholder="Colle ta clé ici" autocomplete="off" spellcheck="false">
-      <small>Stockée uniquement sur cet appareil. <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Obtenir une clé</a></small>
     </label>
 
     <label>Modèle
-      <input type="text" id="setModel" list="models" autocomplete="off" spellcheck="false">
-      <datalist id="models">
-        <option value="gemini-2.5-flash">
-        <option value="gemini-2.5-pro">
-        <option value="gemini-2.5-flash-lite">
-      </datalist>
+      <select id="setModel"></select>
     </label>
 
-    <label>Personnalité (optionnel)
-      <textarea id="setPersona" rows="3" placeholder="Ex : Réponds toujours en lingala et en français, avec humour."></textarea>
+    <div class="field">Couleur<div id="swatches"></div></div>
+
+    <label>Personnalité
+      <textarea id="setPersona" rows="2" placeholder="Ex : drôle, très direct, répond en lingala et français"></textarea>
     </label>
 
     <label class="row">
       <input type="checkbox" id="setSpeak">
-      <span>Lire les réponses à voix haute</span>
+      <span>Répondre à voix haute</span>
     </label>
 
-    <p class="tip">📱 iPhone : Partager → « Sur l'écran d'accueil ». Android : menu ⋮ → « Installer l'application ».</p>
-
     <div class="btns">
-      <button type="button" class="danger" id="btnWipe">Effacer l'historique</button>
+      <button type="button" class="danger" id="btnWipe">Effacer</button>
       <span class="grow"></span>
-      <button type="button" class="ghost" id="btnCancel">Annuler</button>
-      <button type="submit" class="primary" id="btnSave" value="save">Enregistrer</button>
+      <button type="button" class="ghost" id="btnCancel">Fermer</button>
+      <button type="submit" class="primary" value="save">Enregistrer</button>
     </div>
   </form>
 </dialog>
