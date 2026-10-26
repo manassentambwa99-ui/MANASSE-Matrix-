@@ -8,11 +8,12 @@
 
   const API = 'https://api.groq.com/openai/v1/chat/completions';
   
-  // Liste des modèles en cascade (si le premier sature, il bascule sur le suivant)
+  // Modèles Groq mis à jour selon ton panneau (GPT OSS / Qwen)
   const FALLBACK_MODELS = [
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'mixtral-8x7b-32768'
+    'gpt-oss-120b',
+    'gpt-oss-20b',
+    'qwen-3.8-27b',
+    'llama-3.3-70b-versatile'
   ];
 
   const ACCENTS = {
@@ -30,7 +31,7 @@
   };
 
   let settings = Object.assign(
-    { apiKey: '', model: 'llama-3.3-70b-versatile', name: '', accent: 'violet', speak: false, persona: '', customKnowledge: '' },
+    { apiKey: '', model: 'gpt-oss-120b', name: '', accent: 'violet', speak: false, persona: '', customKnowledge: '' },
     store.get('mnl_settings', {})
   );
   const saveSettings = () => store.set('mnl_settings', settings);
@@ -204,7 +205,6 @@
     return prompt;
   }
 
-  // Fonction de requête avec bascule automatique entre les modèles Groq
   async function streamWithFallback(messages, signal, onText) {
     const modelsToTry = [settings.model, ...FALLBACK_MODELS.filter(m => m !== settings.model)];
     
@@ -241,7 +241,7 @@
           const lines = buf.split('\n');
           buf = lines.pop();
 
-            for (const line of lines) {
+          for (const line of lines) {
             if (!line.startsWith('data:')) continue;
             const payload = line.slice(5).trim();
             if (payload === '[DONE]') break;
@@ -255,13 +255,12 @@
             } catch {}
           }
         }
-        return full; // Succès, on renvoie la réponse
+        return full;
       } catch (e) {
         lastError = e;
-        // On essaie le modèle suivant de la liste
       }
     }
-    throw lastError || new Error("Tous les modèles Groq sont momentanément indisponibles.");
+    throw lastError || new Error("Modèles indisponibles.");
   }
 
   async function send(raw) {
@@ -300,7 +299,6 @@
     } catch (e) {
       history.pop();
       bot.el.remove();
-      // Si l'IA échoue complètement, on vérifie si l'utilisateur a mis des infos dans sa base perso
       if (settings.customKnowledge) {
         addMsg('model', "⚠️ Réseau ralenti, mais voici ce que j'ai trouvé dans tes données personnelles enregistrées :\n\n" + settings.customKnowledge, { error: false });
       } else {
