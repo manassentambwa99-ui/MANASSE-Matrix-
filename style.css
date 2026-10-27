@@ -229,7 +229,12 @@ dialog label.row input{width:20px;height:20px;accent-color:var(--a)}
 .mem{height:3px;margin:8px 24px 0;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;flex:none}
 .mem i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--a),var(--b));transition:width .4s}
 .mem.full i{background:#fb7185}
-.memtxt{margin:6px 24px 12px;font-size:12px;color:var(--muted);flex:none}
+.memtxt{margin:6px 24px 2px;font-size:12px;color:var(--muted);flex:none}
+.coretxt{display:block;margin:0 24px 12px;padding:2px 0;border:0;background:transparent;font-size:12px;
+  color:var(--muted);text-align:left;flex:none;cursor:pointer}
+.coretxt:hover{color:var(--b)}
+dialog label.row small{color:var(--muted);font-size:12px}
+.les.auto .les-body b::after{content:" · appris seul";color:var(--b);font-weight:400;font-size:12px;opacity:.85}
 #labForm{padding:0 24px;flex:none}
 #labForm input[type=text]{display:block;width:100%;padding:11px 14px;border-radius:14px;border:1px solid var(--stroke);
   background:rgba(255,255,255,.05);color:var(--fg);font:inherit;font-size:16px;outline:0}
