@@ -1,5 +1,5 @@
 /* Service worker de MNL IA — l'interface fonctionne hors-ligne */
-const VERSION = 'mnl-ia-v3';
+const VERSION = 'mnl-ia-v4';
 const SHELL = [
   './',
   'index.html',
@@ -13,7 +13,9 @@ const SHELL = [
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(VERSION)
+      .then((c) => c.addAll(SHELL).then(() => c.add('noyau.md').catch(() => {}))) // le noyau est facultatif
+      .then(() => self.skipWaiting())
   );
 });
 
