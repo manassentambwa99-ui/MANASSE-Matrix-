@@ -15,7 +15,8 @@
   const HIST_BUDGET = 8000;    // conversation récente
   // Balises invisibles : ⟦retenir: titre | contenu⟧ (apprentissage) et 【…】 (renvois de la recherche web)
   const TAG_RETENIR = /⟦\s*retenir\s*:\s*([^⟧|]{1,80}?)\s*\|\s*([^⟧]{1,500}?)\s*⟧/g;
-  const WEB_TRIGGER = /\b(sur (?:le )?(?:web|internet|google)|en ligne|actualit[ée]s?|derni[èe]res? (?:nouvelles|infos?|actus?)|cherche[- ]moi|recherche[- ]moi)\b/i;
+  // Demande explicite de recherche (« cherche sur le web », « les actualités »…) ; « boutique en ligne » seul ne déclenche rien
+  const WEB_TRIGGER = /\b(sur (?:le )?(?:web|internet|google)|(?:cherche|recherche|trouve)[- ](?:moi|le|la|les|ça|ca|des?|un|une|\w+) .*?\ben ligne|cherche[- ]moi|recherche[- ]moi|(?:les |des |l['’])?derni[èe]res? (?:nouvelles|infos?|actus?|actualit[ée]s?)|(?:les |l['’])actualit[ée]s?)\b/i;
   const ACCENTS = {
     violet: { a: [139, 92, 246], b: [34, 211, 238] },
     cyan:   { a: [34, 211, 238], b: [59, 130, 246] },
@@ -52,6 +53,7 @@
 
   /* ================= Noyau : l'algorithme de pensée (noyau.md) ================= */
   let core = { text: '', state: 'none', size: 0 };   // state : ok | cut | cache | none
+  let coreReady = Promise.resolve();                 // les réponses attendent que le noyau soit lu
 
   // Retire les commentaires et les sections « (non envoyé) », puis borne la taille
   function cleanCore(raw) {
@@ -766,7 +768,7 @@
     if (!title) title = text.replace(/\s+/g, ' ').slice(0, 42) + (text.length > 42 ? '…' : '');
     if (editing) {
       const l = lessons.find(x => x.id === editing);
-      if (l) { l.title = title.slice(0, 80); l.text = text; l.ts = Date.now(); saveLessons(); }
+      if (l) { l.title = title.slice(0, 80); l.text = text; l.ts = Date.now(); delete l.auto; saveLessons(); }
     } else {
       addLesson(title, text);
     }
@@ -852,19 +854,37 @@
     (e.status === 403 && /model/i.test(e.message))
   );
 
-  function systemPrompt(voice) {
-    const date = new Date().toLocaleDateString('fr-FR', { dateStyle: 'full' });
+  const fillVars = (text, ctx) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, k) => (k in ctx ? ctx[k] : ''));
+
+  function systemPrompt(voice, web) {
+    const now = new Date();
+    const who = settings.name || "l'utilisateur";
     const model = settings.resolved || PREFERRED[0];
-    let s = "Tu es MNL IA, l'assistant personnel de l'utilisateur : élégant, chaleureux, direct, très compétent et fiable. " +
-      (settings.name ? "Il s'appelle " + settings.name + ". " : '') +
-      "Tu réponds dans sa langue (français par défaut), de façon courte et claire, et tu développes seulement si on te le demande. " +
-      "Tu utilises le Markdown quand cela aide (listes, blocs de code). Tu ne prétends jamais avoir fait ce que tu n'as pas fait. " +
-      "Si on te demande qui tu es : tu es MNL IA, une intelligence artificielle personnelle qui tourne sur un modèle GPT open source (" + model + ") via Groq. " +
-      "Date du jour : " + date + ".";
+    const dateTxt = now.toLocaleDateString('fr-FR', { dateStyle: 'full' });
+    const ctx = {
+      prenom: who,
+      date: dateTxt,
+      heure: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      mode: voice ? 'voix' : 'écrit',
+      echanges: String(convo.filter(m => m.role === 'user').length),
+      memoire: Math.min(100, Math.round(memUsed() / MEM_BUDGET * 100)) + ' %',
+      recherche_web: web ? 'disponible pour cette demande' : 'indisponible',
+      modele: model
+    };
+    let s;
+    if (core.text) {
+      s = "Tu es MNL IA. Ci-dessous, ton noyau : l'algorithme de pensée que tu exécutes à chaque message, dans l'ordre. " +
+        "Il est écrit à la première personne (« je » = toi). Suis-le à la lettre.\n\n" + fillVars(core.text, ctx);
+    } else {
+      s = "Tu es MNL IA, l'assistant personnel de " + who + " : élégant, chaleureux, direct, très compétent et fiable. " +
+        "Tu réponds dans sa langue (français par défaut), de façon courte et claire, et tu développes seulement si on te le demande. " +
+        "Tu utilises le Markdown quand cela aide. Tu ne prétends jamais avoir fait ce que tu n'as pas fait, et tu n'inventes jamais un fait. " +
+        "Si on te demande qui tu es : MNL IA, une intelligence artificielle personnelle qui tourne sur un modèle GPT open source (" + model + ") via Groq. " +
+        "Date du jour : " + dateTxt + ".";
+    }
     const learned = lessonsBlock();
     if (learned) {
-      s += "\n\n## Ce que l'utilisateur t'a appris\n" +
-        "Applique ces méthodes à la lettre dès qu'elles concernent sa demande, sans les citer. Elles passent avant tes habitudes.\n\n" + learned;
+      s += "\n\n## Ce que " + who + " m'a appris\n(Méthodes et faits : à appliquer à la lettre quand ils touchent la demande.)\n\n" + learned;
     }
     if (settings.persona) s += "\n\n## Personnalité souhaitée\n" + settings.persona;
     if (voice) {
@@ -874,7 +894,7 @@
     return s;
   }
 
-  function buildMessages(voice) {
+  function buildMessages(voice, web) {
     const tail = [];
     let used = 0;
     for (let i = convo.length - 1; i >= 0; i--) {
@@ -884,30 +904,60 @@
       tail.unshift({ role: m.role === 'model' ? 'assistant' : 'user', content: m.text });
     }
     while (tail.length > 1 && tail[0].role === 'assistant') tail.shift();
-    return [{ role: 'system', content: systemPrompt(voice) }, ...tail];
+    return [{ role: 'system', content: systemPrompt(voice, web) }, ...tail];
+  }
+
+  // Ce que l'utilisateur voit/entend : sans balises ⟦…⟧ (même incomplètes) ni renvois 【…】 de la recherche web
+  function visible(t) {
+    let v = t.replace(/⟦[^⟧]*⟧/g, '');
+    let cut = v.length !== t.length;
+    const i = v.indexOf('⟦');
+    if (i >= 0) { v = v.slice(0, i); cut = true; }
+    v = v.replace(/【[^】]*】/g, '').replace(/【[^】]*$/, '');
+    return cut ? v.replace(/\s+$/, '') : v;
   }
 
   async function streamOnce(model, messages, signal, onText, opts) {
+    const web = !!opts.web;
     const body = {
-      model, messages, stream: true, temperature: 0.8,
-      max_completion_tokens: opts.voice ? 500 : 2000,
+      model, messages, stream: !web, temperature: 0.8,
+      max_completion_tokens: opts.voice ? 500 : 1500,
       include_reasoning: false,
-      reasoning_effort: opts.voice ? 'low' : 'medium'
+      reasoning_effort: (opts.voice || web) ? 'low' : 'medium'
     };
+    if (web) { body.tools = [{ type: 'browser_search' }]; body.tool_choice = 'auto'; }
     let res;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
       res = await fetch(API + '/chat/completions', {
         method: 'POST', signal, headers: authHeaders(), body: JSON.stringify(body)
       });
       if (res.ok) break;
       const err = await httpError(res);
-      if (attempt === 0 && err.status === 400 && /reasoning/i.test(err.message)) {
-        delete body.include_reasoning;
-        delete body.reasoning_effort;
-        continue;
+      if (err.status === 400 || err.status === 422) {
+        if ('reasoning_effort' in body && /reasoning/i.test(err.message)) {
+          delete body.include_reasoning;
+          delete body.reasoning_effort;
+          continue;
+        }
+        if (body.tools && /tool|browser|search/i.test(err.message)) {
+          delete body.tools;
+          delete body.tool_choice;
+          body.stream = true;
+          opts.webFailed = true;
+          continue;
+        }
       }
       throw err;
     }
+
+    if (!body.stream) {                       // recherche web : réponse complète d'un coup
+      const j = await res.json();
+      const text = j.choices?.[0]?.message?.content || '';
+      if (!text.trim()) throw new Error('Réponse vide, réessaie.');
+      onText(text);
+      return text;
+    }
+
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = '', full = '';
@@ -1010,22 +1060,35 @@
     controller = new AbortController();
     const talk = !!(opts.voice || settings.speak);
     const speaker = makeSpeaker();
+    const web = !!(settings.web || WEB_TRIGGER.test(text));
+    const gopts = Object.assign({}, opts, { web });
     let partial = '';
-    if (voiceOn) setCaption('', '');
+    if (voiceOn) setCaption(web ? 'Je cherche sur le web…' : '', web ? 'ai' : '');
 
     try {
-      const full = await generate(buildMessages(!!opts.voice), controller.signal, (t) => {
-        partial = t;
-        bot.set(t);
+      await coreReady;
+      const raw = await generate(buildMessages(!!opts.voice, web), controller.signal, (t) => {
+        const v = visible(t);
+        partial = v;
+        bot.set(v);
         scrollDown();
-        if (talk) { try { speaker.feed(t, false); } catch { /* voix indisponible */ } }
-      }, opts);
-      convo.push({ role: 'model', text: full });
+        if (talk) { try { speaker.feed(v, false); } catch { /* voix indisponible */ } }
+      }, gopts);
+
+      // Apprentissage : balises ⟦retenir: titre | contenu⟧ écrites par l'IA en fin de réponse
+      let learned = 0;
+      for (const m of raw.matchAll(TAG_RETENIR)) { if (learnAuto(m[1], m[2])) learned++; }
+      const shown = visible(raw).trim() || (learned ? 'Retenu.' : '');
+      if (!shown) throw new Error('Réponse vide, réessaie.');
+
+      convo.push({ role: 'model', text: shown });
       persist();
-      bot.done(full);
+      bot.done(shown);
       scrollDown();
+      if (learned) toast('Retenu ✓');
+      else if (gopts.webFailed) toast('Recherche web indisponible : réponse sans recherche');
       if (talk) {
-        try { speaker.feed(full, true); } catch { /* voix indisponible */ }
+        try { speaker.feed(shown, true); } catch { /* voix indisponible */ }
         if (voiceOn) tts.whenIdle(() => { if (voiceOn && !busy) setTimeout(listen, 300); });
       }
     } catch (e) {
@@ -1154,6 +1217,7 @@
     $('#setKey').value = settings.apiKey;
     $('#setPersona').value = settings.persona;
     $('#setSpeak').checked = settings.speak;
+    $('#setWeb').checked = settings.web;
     fillModels();
     fillVoices();
     buildSwatches();
@@ -1172,6 +1236,7 @@
     settings.name = $('#setName').value.trim();
     settings.persona = $('#setPersona').value.trim();
     settings.speak = $('#setSpeak').checked;
+    settings.web = $('#setWeb').checked;
     settings.voice = $('#setVoice').value;
     saveSettings();
     updateGreeting();
@@ -1234,6 +1299,14 @@
     } catch { /* ignore */ }
     try { window.history.replaceState(null, '', location.pathname + location.search); } catch { /* ignore */ }
   }
+
+  coreReady = loadCore();
+  $('#coreTxt').addEventListener('click', async () => {
+    coreReady = loadCore();
+    const c = await coreReady;
+    toast(c.state === 'ok' ? 'Noyau rechargé ✓' : c.state === 'cut' ? 'Noyau rechargé, mais trop long : coupé'
+      : c.state === 'cache' ? 'Hors-ligne : copie gardée' : 'Noyau introuvable (noyau.md)');
+  });
 
   applyAccent(settings.accent);
   updateGreeting();
